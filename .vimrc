@@ -1,6 +1,8 @@
 "NOTE: requires vim-gtk, ctags, and xclip to be installed!
 
-" this mess tells us  is the current tmux pane is running vim. invoke with:
+"TODO: something updates after an source
+
+" this mess tells us if the current tmux pane is running vim. invoke with:
 " let is_vim = system(g:is_vim)[0]
 let g:is_vim = "tmux if-shell \"ps -o state= -o comm= -t #{pane_tty} | grep -iqE '^[^TXZ ]+ +(\\S+\\/)?g?(view|n?vim?x?)(diff)?$'\" \"run \\\"echo 1\\\"\" \"run \\\"echo 0\\\"\""
 
@@ -8,8 +10,7 @@ set laststatus=2
 set tabstop=4
 set expandtab
 set shiftwidth=4
-set wildmenu
-set wildmode=longest:full,full
+set wildmode=list:longest
 set smartindent
 set guifont=Monospace\ 9
 set number
@@ -22,6 +23,7 @@ set undofile
 set undodir=~/.vim/undodir
 set cmdheight=2
 set backspace=indent,eol,start
+let ch_syntax_for_h = 1 
 
 " colors
 set background=dark
@@ -44,25 +46,25 @@ endfunction
 " set statusline+=%{StatuslineGit()}
 " set statusline+=%#LineNr#
 " set statusline+=\ %f
-" set statusline+=%m\
+" set statusline+=%m
 " set statusline+=%=
 " set statusline+=%#CursorColumn#
 " set statusline+=\ %y
 " set statusline+=\ %p%%
 " set statusline+=\ %l:%c
-" set statusline+=\
+" set statusline+=
 
-" Highlighting searches
+" highlighting searches
 set hlsearch
 set incsearch
 
-" Don't highlight shit on source vimrc wtf
+" don't highlight shit on source vimrc wtf
 :nohls
 
-" Preserve clipboard on exit, requires xclip on system
+" preserve clipboard on exit, requires xclip on system
 autocmd VimLeave * call system("xclip -selection clipboard -i", getreg('+'))
 
-" Ctrl-j = ESC and exit highlighted search
+" ctrl-j = ESC and exit highlighted search
 nnoremap <C-j> :silent! nohls<cr>:echo ""<cr>
 vnoremap <C-j> :silent! nohls<cr>:echo ""<cr>
 inoremap <C-j> :silent! nohls<cr>:echo ""<cr>
@@ -72,16 +74,17 @@ cnoremap <C-j> :silent! nohls<cr>:echo ""<cr>
 inoremap # X#
 
 " always allow 10 line spacing around 'n' and 'N' searches
+"TODO: when no more matches, doesn't set so=0
 nnoremap n :set so=10<cr>n:set so=0<cr>
 nnoremap N :set so=10<cr>N:set so=0<cr>
 
 " on ctag find, center screen
 nnoremap  zz
 
-" Don't select whitespace preceding a word when selecting around it
+" don't select whitespace preceding a word when selecting around it
 "TODO
 
-" Surround a highlighted section with a char
+" surround a highlighted section with a char
 function! SurroundWithChar()
     " get char
     let c = nr2char(getchar())
@@ -110,8 +113,8 @@ vnoremap A :call SurroundWithChar()<cr>
 xmap p pgvy
 
 " When sourcing vimrc, first remove all settings
-command! So mapc | set all& | so ~/.vimrc
-command! SO mapc | set all& | so ~/.vimrc
+command! So mapc | set all& | so ~/.vimrc | :filetype detect
+command! SO mapc | set all& | so ~/.vimrc | :filetype detect
 
 
 " On file save, make sure the last revision actually says today. 
@@ -162,6 +165,7 @@ noremap <F4> :call TagGen()<cr>
 
 " if there's no uncommented lines, uncomment everything
 " else, comment everything
+"TODO: single line comment after a return and auto indent puts cursor back (visual too)
 function! CommentHotkey(with_range) range
     let l:winview = winsaveview()
     silent! norm mz
@@ -170,7 +174,7 @@ function! CommentHotkey(with_range) range
     " get comment symbol per filetype
     if(&ft=='vim')
         let symbol = "\""
-    elseif(&ft == 'c' || &ft == 'cpp')
+    elseif((&ft == 'c') || (&ft == 'cpp') || (&ft == 'ch'))
         let symbol = "\/\/"
     else
         let symbol = "#"
@@ -220,7 +224,9 @@ function! CommentHotkey(with_range) range
     silent! norm `z
     call winrestview(l:winview)
     norm ll
-    if (&ft=='cpp' || &ft=='c')
+
+    " move one more char back for //
+    if((&ft == 'c') || (&ft == 'cpp') || (&ft == 'ch'))
         norm l
     endif
 endfunction!
@@ -314,19 +320,19 @@ vnoremap [Z :call UnTabHotkey(1)<cr>:echo ""<cr>gv
 
 
 " save all vim windows in tmux window. Compiles/Uploads on 'omake pane' if specified
+" warning: clears scrollback buffer on the terminal pane
 function! SaveAllVim(action)
     let starting_pane = system("tmux list-panes | grep active")[0]
     let pane_cnt = system("tmux list-panes | wc -l")[0]
 
     " set terminal pane where omake or omake copy will run
     if(a:action != 0)
-        " assumes pane 1 is the mspdebug pane if 4 panes are open,
-        " pane 2 if 5 panes are open
-        if(pane_cnt == 4)
-            let terminal_pane = 1
-
-        elseif(pane_cnt == 5)
+        " TODO: improve this
+        " assumes pane 1 is the terminal pane unless 5 panes are open
+        if(pane_cnt == 5)
             let terminal_pane = 2
+        else
+            let terminal_pane = 1
         endif
     endif
 
@@ -349,6 +355,8 @@ function! SaveAllVim(action)
         let i += 1
     endwhile
 
+    call system("sleep 0.5")
+
     " switch to terminal pane and see if it has vim open
     silent! exe "!tmux select-pane -t " . terminal_pane
     let is_vim = system(g:is_vim)[0]
@@ -358,6 +366,7 @@ function! SaveAllVim(action)
         " clear the history buffer on terminal pane
         if(a:action != 0)
             silent! exe "!tmux select-pane -t " . terminal_pane
+            silent! exe "!tmux send-keys -X cancel"
             silent! exe "!tmux send-keys \"clear\""
             silent! exe "!tmux clear-history"
         endif
@@ -400,7 +409,7 @@ function! Autoformat()
     let @/=_s
 
     " if(x){ to if (x) {                                     >_>
-    if(&ft == "c" || &ft == "cpp")
+    if((&ft == "c") || (&ft == "cpp") || (&ft == "ch"))
         silent! exe "%g/if(/exe \"norm f(i f{i \""
         silent! exe "%g/for(/exe \"norm f(i f{i \""
         silent! exe "%g/while(/exe \"norm f(i f{i \""
@@ -408,8 +417,8 @@ function! Autoformat()
     endif
 
     " only one space until \ on multiline cpp
-    if(&ft == "c" || &ft == "cpp")
-        silent! %g/\\/exe "norm f\\\bbf ldt\\\ "
+    if((&ft == "c") || (&ft == "cpp") || (&ft == "ch"))
+        silent! %g/\\$/exe "norm f\\\bbf ldt\\\ "
     endif
 
     " char=char to char = char
@@ -447,7 +456,7 @@ nnoremap <F5> :call Autoformat()<cr>:echo "Formatted!"<cr>
 function! IncludeGuard()
     let filename = expand('%:t')
     exe "norm ggi#ifndef __" . filename . "__#define __" . filename . "__"
-    exe "norm Go#endif //__" . filename . "___"
+    exe "norm Go#endif //__" . filename . "__"
     exe "1,2norm Wv$U:s/\\./_/g"
     exe line('$') . "norm Wv$U:s/\\./_/g"
 endfunction!
@@ -457,9 +466,14 @@ endfunction!
 function! SwitchToRespectiveFile()
     :filetype detect
     let file = expand('%:r')
-    if(&ft == 'cpp')
-        exe "e " . file . ".c"
-    elseif(&ft == 'c')
+    if(&ft == 'ch')
+        " if there's a main.cpp, assume this is a cpp project
+        if(filereadable("main.cpp"))
+            exe "e " . file . ".cpp"
+        else
+            exe "e " . file . ".c"
+        endif
+    elseif((&ft == 'c') || (&ft == 'cpp'))
         exe "e " . file . ".h"
     endif
 endfunction!
