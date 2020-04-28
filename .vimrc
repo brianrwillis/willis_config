@@ -343,15 +343,26 @@ function! SaveAllVim(action)
     let pane_cnt = system("tmux list-panes | wc -l")[0]
 
     " Set terminal pane where omake or omake copy will run
-    if(a:action != 0)
-        " TODO: improve this
-        " Assumes pane 1 is the terminal pane unless 5 panes are open
-        if(pane_cnt == 5)
-            let terminal_pane = 2
-        else
-            let terminal_pane = 1
-        endif
-    endif
+    " if(a:action != 0)
+        " " TODO: improve this
+        " " Assumes pane 1 is the terminal pane unless 5 panes are open
+        " if(pane_cnt == 5)
+            " let terminal_pane = 2
+        " else
+            " let terminal_pane = 1
+        " endif
+    " endif
+
+    " Cycle through panes and save all vim windows
+    let i = 0
+    while i < pane_cnt
+        " Select the pane
+        silent! exe "!tmux select-pane -t " . i
+
+        
+
+        let i += 1
+    endwhile
 
     " Cycle through panes and save all vim windows
     let i = 0
@@ -467,8 +478,17 @@ function! Autoformat()
                 \ call RemoveImport(import)
     endif
 
+    " Fix tabbies
+    retab
 
-    " Convert every comment to '# Comment' not '#comment'
+    silent! norm `z
+    call winrestview(l:winview)
+endfunction!
+nnoremap <F5> :call Autoformat()<cr>
+
+" Convert every comment to '# Comment' not '#comment'
+function! FixComments()
+    filetype detect
     " Get comment symbol per filetype
     if(&ft == "vim")
         let symbol = "\""
@@ -487,14 +507,7 @@ function! Autoformat()
         " Caps
         silent! exe "%s/^\\(\\s*\\)" . symbol . " \\(\\w\\)/\\1" . symbol . " \\u\\2/g"
     endif
-
-    " Fix tabbies
-    retab
-
-    silent! norm `z
-    call winrestview(l:winview)
 endfunction!
-nnoremap <F5> :call Autoformat()<cr>
 
 
 " Insert include guard on header file

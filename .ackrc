@@ -1,0 +1,8 @@
+# Always color, even when piping
+--color
+
+# Ignore Cosmos outputs dir
+--ignore-dir=outputs
+
+# Always ignore tags files
+--ignore-file=is:tags
