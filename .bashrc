@@ -116,10 +116,7 @@ if ! shopt -oq posix; then
   fi
 fi
 
-
-
 alias hib="sudo hibernate --force"
-alias vpn="sudo openvpn --config ~/client.ovpn"
 alias py="python3"
 
 set -o vi
