@@ -1,0 +1,14 @@
+# Copy to home dir
+cp $(ls -pa | grep -v / | grep -v install | grep -v addall) ~/
+
+# Get gruvbox palette
+git clone https://github.com/morhetz/gruvbox.git ~/.vim/pack/default/start/
+
+# Clipboard
+sudo apt install xclip
+
+# Ctags
+sudo apt install ctags
+
+# Caps lock = Ctrl
+setxkbmap -option ctrl:nocaps

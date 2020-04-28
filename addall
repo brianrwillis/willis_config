@@ -1,0 +1,4 @@
+for i in $(ls -pa | grep -v / | grep -v install | grep -v addall)
+do
+    cp ~/$i .
+done
