@@ -1,8 +1,14 @@
-" NOTE: requires vim-gtk, ctags, and xclip to be installed!
+" NOTE: requires vim to be compiled with +clipboard, 
+" and ctags + xclip to be installed!
 
-" TODO; remap change/delete to put into the black hole register
+" TODO; remap change/delete to put into th black hole register
 "remap 'onoremap' for 'around' x
 " TODO: something updates after a source
+" TODO: tab = ctrl-p in insert
+" if in insert, still actually tab is no chars before cursor
+" maybe not
+
+" TODO: %s/( \(.*\) )/(\1)/g
 
 " This mess tells us if the current tmux pane is running vim. invoke with:
 " let is_vim = system(g:is_vim)[0]
@@ -28,6 +34,8 @@ set cmdheight=2                 " Less 'Press enter to continue' on cmd line
 set backspace=indent,eol,start  " Fix backspacing after a newline
 set scroll=15                   " Set scroll to ~25% of a page
 
+syntax on
+
 let ch_syntax_for_h = 1         " Header filetype is 'ch'
 
 " Colors
@@ -40,13 +48,6 @@ let &t_SI = "\<esc>[5 q"
 let &t_SR = "\<esc>[5 q"
 let &t_EI = "\<esc>[2 q"
 
-" TODO: not in use
-function! StatuslineGit()
-  let l:branchname = system("git rev-parse --abbrev-ref HEAD 2>/dev/null | tr -d '\n'")
-  return strlen(l:branchname) > 0?'  '.l:branchname.' ':''
-endfunction
-
-"TODO: add git stuff
 set statusline=%F\ %m%r                        " name_of_file_tail [+][RO]
 set statusline+=%=                             " start right-aligning
 set statusline+=\ alt:\ %{expand('#:t')}\ \    " alternate_file_tail
@@ -62,25 +63,46 @@ set incsearch
 " Preserve clipboard on exit, requires xclip on system
 autocmd VimLeave * call system("xclip -selection clipboard -i", getreg('+'))
 
+" Force syntax on buf open
+autocmd BufEnter * syntax enable
+
+" Ctrl-H -> open new tab with file list of current dir
+" Ctrl-G -> open current tab with file list of current dir
+nnoremap  :tabe %:h
+nnoremap  :e %:h
+
 " Ctrl-j = ESC and exit highlighted search
-nnoremap <C-j> :silent! nohls<cr>:echo ""<cr>
-vnoremap <C-j> :silent! nohls<cr>:echo ""<cr>
-inoremap <C-j> :silent! nohls<cr>:echo ""<cr>
-cnoremap <C-j> :silent! nohls<cr>:echo ""<cr>
+nnoremap <C-j> :silent! nohls<cr>:set so=0<cr>:echo ""<cr>
+vnoremap <C-j> :silent! nohls<cr>:set so=0<cr>:echo ""<cr>
+inoremap <C-j> :silent! nohls<cr>:set so=0<cr>:echo ""<cr>
+cnoremap <C-j> :silent! nohls<cr>:set so=0<cr>:echo ""<cr>
 
 " Don't force '#' to the first column
 inoremap # X#
 
+" Don't let '[' do anything in visual mode
+vnoremap [ <nop>
+	
+" I don't use D to delete
+nnoremap D <nop>
+vnoremap D <nop>
+
 " I don't need ex mode
 nnoremap Q <nop>
 
-" Always allow 10 line spacing around 'n' and 'N' searches
-" TODO: when no more matches, doesn't set so=0
-nnoremap n :set so=10<cr>n:set so=0<cr>
-nnoremap N :set so=10<cr>N:set so=0<cr>
+" Get rid of x-server
+" nnoremap y "+y
+" nnoremap p "+p
+" vnoremap y "+y
+" vnoremap p "+p
+
+" Center screen on search results
+nnoremap n nzz
+nnoremap N Nzz
 
 " On ctag find, center screen
 nnoremap  zz
+nnoremap  zz
 
 " Don't select whitespace preceding a word when selecting around it
 " TODO
@@ -108,29 +130,29 @@ function! SurroundWithChar()
     " Insert
     exe "norm gv\"zc" . firstc . "\"zpa" . lastc
 endfunction!
-vnoremap A :call SurroundWithChar()<cr>
+vnoremap S :call SurroundWithChar()<cr>
 
 " Don't overwrite clipboard text on paste over
 xmap p pgvy
-
-" Change places into black hole register
-"TODO: fix quote
-nnoremap ciw "_ciw
-nnoremap ciW "_ciW
-nnoremap cib "_cib
-nnoremap ci[ "_ci[
-nnoremap ci] "_ci]
-nnoremap ci( "_ci(
-nnoremap ci) "_ci)
-nnoremap ci{ "_ci{
-nnoremap ci} "_ci}
-nnoremap ci\" "_ci\"
-nnoremap ci' "_ci'
 
 " When sourcing vimrc, first try and remove all settings
 command! So mapc | set all& | so ~/.vimrc | :filetype detect
 command! SO mapc | set all& | so ~/.vimrc | :filetype detect
 
+" Previous in jump list (remap Ctrl-I)
+nnoremap  <C-I>
+
+" Tab for completion
+" FIXME: removing insert-mode tab for this
+" just do if no text before cursor, do tab
+inoremap <tab> <C-P>
+inoremap <S-tab> <C-N>
+
+" '/' in visual mode means 'search for this'
+" TODO
+
+" Ctrl-\ = open this tag in a new window
+nnoremap  :tabnew %<cr><C-o><C-]>
 
 " On file save, make sure the last revision actually says today.
 " Assumes text 'Last Rev' is in first 20 lines.
@@ -144,6 +166,10 @@ function! OnSave()
         silent! 0,20g/Last Rev/exe "norm /RevWv$h\"zy"
         if(current_date!=getreg('z'))
             silent! 0,20g/Last Rev/exe "norm /RevW\"_d$a" . current_date
+        endif
+        silent! 0,20g/By/exe "norm /ByWv$h\"zy"
+        if(getreg('z')!="Brian Willis")
+            silent! 0,20g/By/exe "norm /ByW\"_d$aBrian Willis"
         endif
     endif
 
@@ -166,7 +192,7 @@ augroup END
 function! TagGen()
     :filetype detect
     silent! :call system("rm tags")
-    if ((&ft == 'cpp') || (&ft == 'c') || (&ft == 'ch'))
+    if ((&ft == 'c') || (&ft == 'ch'))
         silent! !ctags -R . /opt/capella-msp430/msp430-elf/include/msp430fr5964.h &
     else
         silent! !ctags -R . &
@@ -179,7 +205,7 @@ noremap <F4> :call TagGen()<cr>
 
 
 " If there's no uncommented lines, uncomment everything
-" Else, comment everything
+" else, comment everything
 " TODO: single line comment after a return and auto indent puts cursor back (visual too)
 function! CommentHotkey(with_range) range
     let l:winview = winsaveview()
@@ -201,18 +227,15 @@ function! CommentHotkey(with_range) range
                 \ "\\)\\|\\(^" . symbol . "\\)::n"
     redir END
 
-    if(symbol_cnt[1] == 'E')
+    let symbol_cnt = split(symbol_cnt, ' ')[0][1:]
+
+    if(symbol_cnt == 'Error')
         let symbol_cnt = 0
-    else
-        let symbol_cnt = symbol_cnt[1]
     endif
 
     if(a:with_range == 1)
         " Get number of total lines in selection
-        redir => line_cnt
-            silent! exe a:firstline . "," . a:lastline . "s/.//n"
-        redir END
-        let line_cnt = line_cnt[1]
+        let line_cnt = a:lastline - a:firstline + 1
 
         " Add/remove comment symbols
         if(symbol_cnt != line_cnt)
@@ -251,8 +274,8 @@ vnoremap  :call CommentHotkey(1)<cr>
 
 
 " Tab
-" For range, does not fix indentation of individual lines.
-" Assumes indents are already divisible by 4
+" For range, does not fix indentation of individual lines and 
+" assumes indents are already divisible by 4
 function! TabHotkey(with_range) range
     silent! norm mz
 
@@ -275,12 +298,12 @@ function! TabHotkey(with_range) range
     exe "silent! norm `z" . tab_amount . "l"
 endfunction!
 nnoremap <Tab> :call TabHotkey(0)<cr>:echo ""<cr>
-" Warning; stupid. If before tabbing we are on column 1,
-" want to return to insert mode via 'i'. Otherwise, want 'a'
-" But we ALSO want to use an 'a' if the line is only whitespaces. For some reason.
-inoremap <expr> <Tab> ((col('.') == 1) && !(getline('.') !~ '\S')) ?
-        \'<space><backspace>:call TabHotkey(0)<cr>:echo ""<cr>i':
-        \'<space><backspace>:call TabHotkey(0)<cr>:echo ""<cr>a'
+ " Warning; stupid. If before tabbing we are on column 1,
+ " want to return to insert mode via 'i'. Otherwise, want 'a'
+ " But we ALSO want to use an 'a' if the line is only whitespaces. For some reason.
+" inoremap <expr> <Tab> ((col('.') == 1) && !(getline('.') !~ '\S')) ?
+        " \'<space><backspace>:call TabHotkey(0)<cr>:echo ""<cr>i':
+        " \'<space><backspace>:call TabHotkey(0)<cr>:echo ""<cr>a'
 vnoremap <Tab> :call TabHotkey(1)<cr>:echo ""<cr>gv
 
 
@@ -326,110 +349,15 @@ function! UnTabHotkey(with_range) range
     endif
 endfunction!
 nnoremap [Z :call UnTabHotkey(0)<cr>:echo ""<cr>
-" Warning; stupid. If after untabbing we would be on column 1,
-" Want to return to insert mode via 'i'. Otherwise, want 'a'
-inoremap <expr> [Z (col('.') <= 5) ?
-    \'<space><backspace>:call UnTabHotkey(0)<cr>:echo ""<cr>i':
-    \'<space><backspace>:call UnTabHotkey(0)<cr>:echo ""<cr>a'
+ " Warning; stupid. If after untabbing we would be on column 1,
+ " Want to return to insert mode via 'i'. Otherwise, want 'a'
+" inoremap <expr> [Z (col('.') <= 5) ?
+    " \'<space><backspace>:call UnTabHotkey(0)<cr>:echo ""<cr>i':
+    " \'<space><backspace>:call UnTabHotkey(0)<cr>:echo ""<cr>a'
 vnoremap [Z :call UnTabHotkey(1)<cr>:echo ""<cr>gv
 
 
-" Save all vim windows in tmux window. Compiles/Uploads on 'omake pane' if specified
-" Warning: clears scrollback buffer on the terminal pane
-" TODO: doesn't work when done on right pane
-" TODO: omake clean && omake
-function! SaveAllVim(action)
-    let starting_pane = system("tmux list-panes | grep active")[0]
-    let pane_cnt = system("tmux list-panes | wc -l")[0]
-
-    " Set terminal pane where omake or omake copy will run
-    " if(a:action != 0)
-        " " TODO: improve this
-        " " Assumes pane 1 is the terminal pane unless 5 panes are open
-        " if(pane_cnt == 5)
-            " let terminal_pane = 2
-        " else
-            " let terminal_pane = 1
-        " endif
-    " endif
-
-    " Cycle through panes and save all vim windows
-    let i = 0
-    while i < pane_cnt
-        " Select the pane
-        silent! exe "!tmux select-pane -t " . i
-
-        
-
-        let i += 1
-    endwhile
-
-    " Cycle through panes and save all vim windows
-    let i = 0
-    while i < pane_cnt
-        " Select the pane
-        silent! exe "!tmux select-pane -t " . i
-
-        " Is vim open in this pane?
-        let is_vim = system(g:is_vim)[0]
-
-        " :wa if vim is open in pane
-        if(is_vim)
-            silent! exe "!tmux send-keys \":wa\""
-        endif
-
-        " TODO: ismodififed to see if done saving
-
-        let i += 1
-    endwhile
-
-    "TODO: find if buffer is saved (close the loop)
-    call system("sleep 0.5")
-
-    " Switch to terminal pane and see if it has vim open
-    silent! exe "!tmux select-pane -t " . terminal_pane
-    let is_vim = system(g:is_vim)[0]
-
-    " If the terminal pane actually has vim open, don't try to omake on it
-    if(!is_vim)
-        " Clear the history buffer on terminal pane
-        if(a:action != 0)
-            silent! exe "!tmux select-pane -t " . terminal_pane
-            silent! exe "!tmux send-keys -X cancel"
-            silent! exe "!tmux send-keys \"clear\""
-            silent! exe "!tmux clear-history"
-        endif
-
-        " Omake or omake copy if specified
-        if(a:action == 1)
-            silent! exe "!tmux send-keys \"omake\""
-        elseif(a:action == 2)
-            " Tries to get project name (parent_dir) and append _dev to it
-            " Not super modular
-            silent! exe "!tmux send-keys \"omake copy_" . expand('%:p:h:t') . "_dev\""
-        endif
-    endif
-
-    " Go back to the pane this mess started from
-    silent! exe "!tmux select-pane -t " . starting_pane
-
-    " Refresh screen
-    exe "norm "
-endfunction!
-" F7 = save all, F8 = save all and omake, F9 = save all and omake copy
-nnoremap <F7> :call SaveAllVim(0)<cr>
-inoremap <F7> :call SaveAllVim(0)<cr>
-nnoremap <F8> :call SaveAllVim(1)<cr>
-inoremap <F8> :call SaveAllVim(1)<cr>
-nnoremap <F9> :call SaveAllVim(2)<cr>
-inoremap <F9> :call SaveAllVim(2)<cr>
-
-
 " Autoformat
-" TODO: spaces around operators
-" TODO: visual select area to change
-" TODO: slow mode
-" TODO: count number of changes and print at end
 function! Autoformat()
     let l:winview = winsaveview()
     filetype detect
@@ -437,77 +365,15 @@ function! Autoformat()
 
     " Find and remove all whitespace on empty lines
     let _s=@/
-    exe "%s:\\s\\+$::e"
+    :%s/\s\+$//e
     let @/=_s
 
-    " If(x){ to if (x) {                                     >_>
-    if((&ft == "c") || (&ft == "cpp") || (&ft == "ch"))
-        silent! exe "%g/if(/exe \"norm f(i f{i \""
-        silent! exe "%g/for(/exe \"norm f(i f{i \""
-        silent! exe "%g/while(/exe \"norm f(i f{i \""
-        silent! exe "%g/switch(/exe \"norm f(i f{i \""
-    endif
-
-    " Only one space until \ on multiline cpp
-    if((&ft == "c") || (&ft == "cpp") || (&ft == "ch"))
-        silent! %g/\\$/exe "norm f\\\bbf ldt\\\ "
-    endif
-
-    " Char=char to char = char
-    " But leave stings of ==== untouched
-    if(&ft != "vim")
-        silent! %s/\(\w\|d\|\'\|\"\|\[\|\]\|(\|)\|{\|}\)=\(\w\|d\|\'\|\"\|\[\|\]\|(\|)\|{\|}\)/\1 = \2/g
-        silent! %s/\(\w\|d\|\'\|\"\|\[\|\]\|(\|)\|{\|}\)==\(\w\|d\|\'\|\"\|\[\|\]\|(\|)\|{\|}\)/\1 == \2/g
-    endif
-
-
-    " Remove unused imports
-    " Function to remove unused imports
-    function! RemoveImport(import)
-        " If we don't see a <library>.<something>, remove the import
-        if(match(readfile(expand("%:p")), a:import.'\.') == -1)
-            exe "g/" . a:import . "/exe \"norm \\\"_dd\""
-            " Single global does not catch 2nd instances for some reason
-            exe "g/" . a:import . "/exe \"norm \\\"_dd\""
-        endif
-    endfunction!
-
-    " Removal
-    if(&ft == "python")
-        g/import \<\w\+\>/exe "norm $" | let import=expand('<cword>') |
-                \ call RemoveImport(import)
-    endif
-
-    " Fix tabbies
     retab
 
     silent! norm `z
     call winrestview(l:winview)
 endfunction!
 nnoremap <F5> :call Autoformat()<cr>
-
-" Convert every comment to '# Comment' not '#comment'
-function! FixComments()
-    filetype detect
-    " Get comment symbol per filetype
-    if(&ft == "vim")
-        let symbol = "\""
-    elseif((&ft == "c") || (&ft == "cpp") || (&ft == "ch"))
-        let symbol = "\\/\\/"
-    elseif(&ft == "python")
-        let symbol = "#"
-    else
-        let symbol = "NONE"
-    endif
-
-    " Maybe wise to do nothing if filetype not explicitly accounted for
-    if(symbol != "NONE")
-        " Add space
-        silent! exe "%s/^\\(\\s*\\)" . symbol . "\\(\\S\\)/\\1" . symbol . " \\2/g"
-        " Caps
-        silent! exe "%s/^\\(\\s*\\)" . symbol . " \\(\\w\\)/\\1" . symbol . " \\u\\2/g"
-    endif
-endfunction!
 
 
 " Insert include guard on header file
@@ -557,13 +423,7 @@ inoremap  :call SwitchToRespectiveFile()<cr>
 
 " From_uppercase == 1: convert CAPS_WITH_UNDERSCORES to CapsWithUnderscores
 " From_uppercase == 0: convert caps_with_underscores to CapsWithUnderscores
-" FIXME: does not work for TEST_P_THING (single char inbetween underscores)
-function! CapsConvert(from_uppercase)
-    " Always start with CAPS_WITH_UNDERSCORES
-    if(a:from_uppercase == 0)
-        norm viw~
-    endif
-
+function! ConvertCaps()
     " Get number of underscores
     let underscore_cnt = strlen(substitute(expand('<cword>'), "[^_]", "", "g"))
 
@@ -574,7 +434,7 @@ function! CapsConvert(from_uppercase)
     let i = 0
     while i < underscore_cnt
         let i += 1
-        norm lvt_uf_x"
+        norm vt_~~hf_x"
     endwhile
 
     " Get last part
@@ -583,12 +443,16 @@ function! CapsConvert(from_uppercase)
     " Place cursor at end of word
     norm e
 endfunction!
-noremap  :call CapsConvert(1)<cr>:echo ""<cr>
 
 " Auto-increments a selection of numbers in visual selection, e.g.:
 " 0      0
 " 0  ->  1
 " 0      2
+" TODO: multiple columns of numbers independently
+" 0   0      0   0
+" 0   0  ->  0   1
+" 0   0      0   2
+" FIXME: this is slow
 function! LinearIncrement() range
     " Don't touch first line in selection
     let curr_line = getpos("'<")[1] + 1
@@ -597,20 +461,26 @@ function! LinearIncrement() range
     let i = curr_line
     while i <= last_line
         " If a digit does not exist on this line, skip
-        let num = match(getline(i), '\(\d\)')
-        if num < 0
+        let col = match(getline(i), '\(\d\)')
+        if col < 0
             continue
         endif
 
         " For all lines after this one, increment by 1
         let j = i
         while j <= last_line
-            exe "norm! " . j . "G" . num . "|"
+            exe "norm! " . j . "G" . col . "|"
             let j += 1
         endwhile
 
         let i += 1
     endwhile
+endfunction!
+
+" Create a c program from the c template file
+function! CreateC()
+    " Place contents of template file
+    0r ~/.vim/templates/c
 endfunction!
 
 " Create a penguin script from the penguin template file
@@ -634,21 +504,15 @@ function! CreatePenguin()
     " Would use 'g' command but regex matching will match lines instead of the match
     " Itself when used in a function for some raisin (there are only 3 to replace)
     silent! exe "/" . filename . "\\(\\.\\)\\@!"
-    norm w
-    :call CapsConvert(0)
+    norm wveU
+    :call ConvertCaps()
     silent! exe "/" . filename . "\\(\\.\\)\\@!"
-    norm ww
-    :call CapsConvert(0)
+    norm wwveU
+    :call ConvertCaps()
     silent! exe "/" . filename . "\\(\\.\\)\\@!"
-    norm w
-    :call CapsConvert(0)
+    norm wveU
+    :call ConvertCaps()
 
     " Move to first 'todo' string
     silent! norm /TODOzz
 endfunction!
-
-" Not in use yet
-function! TypeOfChar()
-    return join(map(synstack(line('.'), col('.')), 'synIDattr(v:val, "name")'))
-endfunction!
-

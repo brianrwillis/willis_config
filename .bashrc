@@ -85,7 +85,7 @@ if [ -x /usr/bin/dircolors ]; then
 fi
 
 # colored GCC warnings and errors
-#export GCC_COLORS='error=01;31:warning=01;35:note=01;36:caret=01;32:locus=01:quote=01'
+export GCC_COLORS='error=01;31:warning=01;35:note=01;36:caret=01;32:locus=01:quote=01'
 
 # some more ls aliases
 alias ll='ls -alF'
@@ -116,9 +116,6 @@ if ! shopt -oq posix; then
   fi
 fi
 
-alias hib="sudo hibernate --force"
-alias py="python3"
-
 set -o vi
 bind -m vi-insert "\C-p.":previous-history
 bind -m vi-insert "\C-n.":next-history
@@ -126,3 +123,32 @@ bind -m vi-insert "\C-a.":beginning-of-line
 bind -m vi-insert "\C-e.":end-of-line
 
 stty -ixon
+
+alias py="python3"
+alias go="gnome-open"
+alias con="vi \$(git ls-files -u  | cut -f 2 | sort -u)"
+alias vi="vim"
+alias iv="vim"
+alias vo="vim"
+alias ov="vim"
+alias akc="ack"
+alias SO="source ~/.bashrc && source ~/.bash_aliases && source ~/.profile"
+alias So="SO"
+
+# If we don't study the commands of the past, we're doomed to retype them
+HISTSIZE=100000
+HISTFILESIZE=100000
+
+# Share bash history across all terminals:
+# Avoid duplicates
+HISTCONTROL=ignoredups:erasedups  
+# When the shell exits, append to the history file instead of overwriting it
+shopt -s histappend
+# After each command, append to the history file and reread it
+PROMPT_COMMAND="${PROMPT_COMMAND:+$PROMPT_COMMAND$'\n'}history -a; history -c; history -r"
+
+# Prevent Qt session management errors
+unset SESSION_MANAGER
+
+# Default editor
+export EDITOR="vim"
