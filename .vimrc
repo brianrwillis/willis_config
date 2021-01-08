@@ -1,4 +1,4 @@
-" NOTE: requires vim to be compiled with +clipboard, 
+" NOTE: requires vim to be compiled with +clipboard,
 " and ctags + xclip to be installed!
 
 " TODO; remap change/delete to put into th black hole register
@@ -32,11 +32,19 @@ set timeoutlen=250              " Quarter second delays on hotkeys
 set ttimeoutlen=250
 set cmdheight=2                 " Less 'Press enter to continue' on cmd line
 set backspace=indent,eol,start  " Fix backspacing after a newline
-set scroll=15                   " Set scroll to ~25% of a page
+
+let ch_syntax_for_h = 1           " Header filetype is 'ch'
+
+" Set scroll to ~25% of a page
+:autocmd VimEnter,WinEnter,BufEnter,TabEnter,CmdWinEnter,CursorMoved * if winheight(0) > 15 | set scroll=15 | endif
+
+" Set scroll offset to sixth of a page
+:autocmd VimEnter,WinEnter,BufEnter,TabEnter,CmdWinEnter,CursorMoved * if winheight(0) > 15 | let &scrolloff = winheight(0) / 6 | endif
+
+" Force the cursor to cmd mode on entering vim
+:autocmd VimEnter * norm! 
 
 syntax on
-
-let ch_syntax_for_h = 1         " Header filetype is 'ch'
 
 " Colors
 set background=dark
@@ -63,6 +71,10 @@ set incsearch
 " Preserve clipboard on exit, requires xclip on system
 autocmd VimLeave * call system("xclip -selection clipboard -i", getreg('+'))
 
+" Open to last position
+autocmd BufReadPost * if line("'\"") > 0 && line("'\"") <= line("$") | exe "normal! g`\"" | endif
+
+
 " Force syntax on buf open
 autocmd BufEnter * syntax enable
 
@@ -72,17 +84,24 @@ nnoremap  :tabe %:h
 nnoremap  :e %:h
 
 " Ctrl-j = ESC and exit highlighted search
-nnoremap <C-j> :silent! nohls<cr>:set so=0<cr>:echo ""<cr>
-vnoremap <C-j> :silent! nohls<cr>:set so=0<cr>:echo ""<cr>
-inoremap <C-j> :silent! nohls<cr>:set so=0<cr>:echo ""<cr>
-cnoremap <C-j> :silent! nohls<cr>:set so=0<cr>:echo ""<cr>
+nnoremap <C-j> :silent! nohls<cr>:echo ""<cr>
+vnoremap <C-j> :silent! nohls<cr>:echo ""<cr>
+inoremap <C-j> :silent! nohls<cr>:echo ""<cr>
+cnoremap <C-j> :silent! nohls<cr>:echo ""<cr>
 
 " Don't force '#' to the first column
 inoremap # X#
 
 " Don't let '[' do anything in visual mode
 vnoremap [ <nop>
-	
+
+" Dont let K do anything in visual
+vnoremap K <nop>
+
+" Remove K functionality
+nnoremap K <nop>
+vnoremap K <nop>
+
 " I don't use D to delete
 nnoremap D <nop>
 vnoremap D <nop>
@@ -95,6 +114,10 @@ nnoremap Q <nop>
 " nnoremap p "+p
 " vnoremap y "+y
 " vnoremap p "+p
+
+" Don't jump on first match
+nnoremap # :keepjumps normal! mz#`z<cr>
+nnoremap * :keepjumps normal! mz*`z<cr>
 
 " Center screen on search results
 nnoremap n nzz
@@ -174,7 +197,7 @@ function! OnSave()
     endif
 
     " Restore position
-    silent! norm `z
+    silent! :keepjumps normal! `z
     call winrestview(l:winview)
 endfunction!
 autocmd BufWritePre,FileWritePre * :call OnSave()
@@ -274,7 +297,7 @@ vnoremap  :call CommentHotkey(1)<cr>
 
 
 " Tab
-" For range, does not fix indentation of individual lines and 
+" For range, does not fix indentation of individual lines and
 " assumes indents are already divisible by 4
 function! TabHotkey(with_range) range
     silent! norm mz

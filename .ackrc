@@ -2,7 +2,7 @@
 --color
 
 # Ignore Cosmos outputs dir
---ignore-dir=outputs
+--ignore-dir=~/repos/cosmos-environment/outputs
 
 # Always ignore tags files
 --ignore-file=is:tags

@@ -126,7 +126,7 @@ stty -ixon
 
 alias py="python3"
 alias go="gnome-open"
-alias con="vi \$(git ls-files -u  | cut -f 2 | sort -u)"
+alias con="vi \$(git ls-files -u | cut -f 2 | sort -u)"
 alias vi="vim"
 alias iv="vim"
 alias vo="vim"
@@ -150,5 +150,12 @@ PROMPT_COMMAND="${PROMPT_COMMAND:+$PROMPT_COMMAND$'\n'}history -a; history -c; h
 # Prevent Qt session management errors
 unset SESSION_MANAGER
 
+# Remove Ctrl-S freeze
+stty -ixon
+
 # Default editor
 export EDITOR="vim"
+
+# Dont close the bash shell after period of no activity
+# (WHY DOES THIS EXIST)
+export TMOUT=0
