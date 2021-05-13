@@ -1,10 +1,10 @@
-# confs
+# Confs
 cp ~/.ackrc ~/.bashrc ~/.inputrc ~/.tmux.conf ~/.profile ~/.vimrc .
 
-# vim stuff
+# Vim stuff
 cp -r ~/.vim/after/syntax .vim/after/
 cp -r ~/.vim/colors .vim
 cp -r ~/.vim/templates .vim
 
-# terminal profile
+# Terminal profile
 dconf dump /org/gnome/terminal/legacy/profiles:/ > gnome_profile.dconf
