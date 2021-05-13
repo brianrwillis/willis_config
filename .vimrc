@@ -8,6 +8,8 @@
 " if in insert, still actually tab is no chars before cursor
 " maybe not
 
+"TODO: increase paths, no path=**
+
 " TODO: %s/( \(.*\) )/(\1)/g
 
 " This mess tells us if the current tmux pane is running vim. invoke with:
@@ -33,16 +35,22 @@ set ttimeoutlen=250
 set cmdheight=2                 " Less 'Press enter to continue' on cmd line
 set backspace=indent,eol,start  " Fix backspacing after a newline
 
-let ch_syntax_for_h = 1           " Header filetype is 'ch'
+let ch_syntax_for_h=1           " Header filetype is 'ch'
 
 " Set scroll to ~25% of a page
-:autocmd VimEnter,WinEnter,BufEnter,TabEnter,CmdWinEnter,CursorMoved * if winheight(0) > 15 | set scroll=15 | endif
+:autocmd CursorMoved,BufEnter * if winheight(0) > 15 | set scroll=15 | endif
 
 " Set scroll offset to sixth of a page
-:autocmd VimEnter,WinEnter,BufEnter,TabEnter,CmdWinEnter,CursorMoved * if winheight(0) > 15 | let &scrolloff = winheight(0) / 6 | endif
+:autocmd BufEnter * if winheight(0) > 15 | let &scrolloff = winheight(0) / 6 | endif
 
 " Force the cursor to cmd mode on entering vim
 :autocmd VimEnter * norm! 
+
+" Open to last position
+autocmd BufReadPost * if line("'\"") > 0 && line("'\"") <= line("$") | exe "normal! g`\"" | endif
+
+" Force syntax on buf open
+autocmd BufEnter * syntax enable
 
 syntax on
 
@@ -71,17 +79,18 @@ set incsearch
 " Preserve clipboard on exit, requires xclip on system
 autocmd VimLeave * call system("xclip -selection clipboard -i", getreg('+'))
 
-" Open to last position
-autocmd BufReadPost * if line("'\"") > 0 && line("'\"") <= line("$") | exe "normal! g`\"" | endif
-
-
-" Force syntax on buf open
-autocmd BufEnter * syntax enable
+" Always copy yank to clipboard
+" nnoremap y "*y:call system("xclip -selection clipboard -i", getreg('*'))<cr>
+" vnoremap y "*y:call system("xclip -selection clipboard -i", getreg('*'))<cr>
 
 " Ctrl-H -> open new tab with file list of current dir
 " Ctrl-G -> open current tab with file list of current dir
 nnoremap  :tabe %:h
 nnoremap  :e %:h
+
+" fucksake
+nnoremap tg gt
+nnoremap Tg gT
 
 " Ctrl-j = ESC and exit highlighted search
 nnoremap <C-j> :silent! nohls<cr>:echo ""<cr>
@@ -102,18 +111,14 @@ vnoremap K <nop>
 nnoremap K <nop>
 vnoremap K <nop>
 
-" I don't use D to delete
-nnoremap D <nop>
-vnoremap D <nop>
+" Make D/C delete without overwriting reg
+nnoremap D "_d
+vnoremap D "_d
+nnoremap C "_c
+vnoremap C "_c
 
 " I don't need ex mode
 nnoremap Q <nop>
-
-" Get rid of x-server
-" nnoremap y "+y
-" nnoremap p "+p
-" vnoremap y "+y
-" vnoremap p "+p
 
 " Don't jump on first match
 nnoremap # :keepjumps normal! mz#`z<cr>
@@ -126,6 +131,16 @@ nnoremap N Nzz
 " On ctag find, center screen
 nnoremap  zz
 nnoremap  zz
+
+" Don't overwrite clipboard with cuts
+" TODO: WORDs dont work?
+" nnoremap cw "_cw
+" nnoremap cW "_cW
+" nnoremap ciw "_ciw
+" nnoremap ciW "_ciW
+" nnoremap cb "_cb
+" nnoremap cB "_cB
+" xnoremap c "_c
 
 " Don't select whitespace preceding a word when selecting around it
 " TODO
@@ -151,7 +166,7 @@ function! SurroundWithChar()
     endif
 
     " Insert
-    exe "norm gv\"zc" . firstc . "\"zpa" . lastc
+    exe "norm gv\"zygv\"_c" . firstc . "\"zpa" . lastc
 endfunction!
 vnoremap S :call SurroundWithChar()<cr>
 
@@ -161,21 +176,19 @@ xmap p pgvy
 " When sourcing vimrc, first try and remove all settings
 command! So mapc | set all& | so ~/.vimrc | :filetype detect
 command! SO mapc | set all& | so ~/.vimrc | :filetype detect
-
 " Previous in jump list (remap Ctrl-I)
 nnoremap  <C-I>
 
-" Tab for completion
-" FIXME: removing insert-mode tab for this
-" just do if no text before cursor, do tab
-inoremap <tab> <C-P>
-inoremap <S-tab> <C-N>
-
 " '/' in visual mode means 'search for this'
+" vnoremap // y/\V<C-R>=escape(@",'/\')<CR><CR>
 " TODO
 
 " Ctrl-\ = open this tag in a new window
 nnoremap  :tabnew %<cr><C-o><C-]>
+
+function! Suds()
+    exe "norm :w !sudo tee %"
+endfunction!
 
 " On file save, make sure the last revision actually says today.
 " Assumes text 'Last Rev' is in first 20 lines.
@@ -190,9 +203,9 @@ function! OnSave()
         if(current_date!=getreg('z'))
             silent! 0,20g/Last Rev/exe "norm /RevW\"_d$a" . current_date
         endif
-        silent! 0,20g/By/exe "norm /ByWv$h\"zy"
+        silent! 0,20g/By\: /exe "norm /ByWv$h\"zy"
         if(getreg('z')!="Brian Willis")
-            silent! 0,20g/By/exe "norm /ByW\"_d$aBrian Willis"
+            silent! 0,20g/By\: /exe "norm /ByW\"_d$aBrian Willis"
         endif
     endif
 
@@ -211,20 +224,64 @@ augroup BWCCreateDir
 augroup END
 
 
+" :E to reload all open buffers
+function! ReloadAll()
+    let l:winview = winsaveview()
+    let file = expand('%:f')
+
+    " Reload all
+    :set autoread
+    :set noconfirm 
+    :bufdo! e!
+
+    " Restore position
+    silent! exe "e! " . file
+    call winrestview(l:winview)
+
+    :set confirm 
+    :set noautoread
+endfunction!
+command! E :call ReloadAll()
+
+
 " Generate a tags file at the current directory. If a c program, includes the msp430 PAL
 function! TagGen()
     :filetype detect
     silent! :call system("rm tags")
     if ((&ft == 'c') || (&ft == 'ch'))
-        silent! !ctags -R . /opt/capella-msp430/msp430-elf/include/msp430fr5964.h &
+        silent! !ctags -R . /opt/capella-msp430/msp430-elf/include/msp430fr5964.h 2>/dev/null &
     else
-        silent! !ctags -R . &
+        silent! !ctags -R . 2>/dev/null &
     endif
 
     " Clear the screen
     norm 
 endfunction!
 noremap <F4> :call TagGen()<cr>
+
+
+" Print a status check
+function! PrintStatusCheck()
+    norm! oif (status != CFE_SUCCESS) {return status;}
+endfunction!
+noremap  :call PrintStatusCheck()<cr>
+
+
+" Close all non-active buffers
+function! CloseNonActive()
+    :redir @z
+    :silent! buffers!
+    :redir END
+    let buffers = split(@z, '\n')
+    for b in buffers
+        let b = split(b, " ")
+        " if 'a' is in cols 1 or 2, it's active and we don't want to close it
+        if ((stridx(b[1], "a") == -1) && (stridx(b[2], "a") == -1))
+            let ix = substitute(b[0], "u", "", "")
+            exe "bw! " . ix
+        endif
+    endfor
+endfunction!
 
 
 " If there's no uncommented lines, uncomment everything
@@ -296,14 +353,52 @@ inoremap  :call CommentHotkey(0)<cr>a
 vnoremap  :call CommentHotkey(1)<cr>
 
 
+" Tab for completion
+" just do if no text before cursor, do tab
+" function! ParseTab()
+    " " Move us back to where we were
+    " startinsert
+    " let p = getpos('.')
+    " let p[2] = p[2] + 1
+    " :call setpos('.', p)
+" 
+    " " Are we on the first col or is the char under the cursor a space
+    " if ((col('.') == 1) || (matchstr(getline('.'), '\%' . col('.') . 'c.') == ' '))
+        " " For some reason, we need to use 'a' if the line is only whitespaces
+        " if ((col('.') == 1) && !(getline('.') !~ '\S'))
+            " norm <space><backspace>:call TabHotkey(0)<cr>:echo ""<cr>i
+            " echo "HEYO"
+        " else
+            " norm :call TabHotkey(0)
+            " norm l
+            " startinsert
+        " endif
+    " else
+        " norm l
+        " startinsert
+        " :call feedkeys("")
+    " endif
+" endfunction!
+" inoremap <tab> :call ParseTab()<cr>
+" inoremap <S-tab> <C-N>
+
+" Tab for completion
+" TODO: just do if no text before cursor, do tab
+inoremap <tab> <C-P>
+inoremap <S-tab> <C-N>
+
 " Tab
-" For range, does not fix indentation of individual lines and
-" assumes indents are already divisible by 4
+" For range, does not fix indentation of individual lines
 function! TabHotkey(with_range) range
     silent! norm mz
 
     " Get number of spaces until a clean multiple of 4
-    let tab_amount = 4 - indent('.') % 4
+    if(a:with_range==1)
+        " Use the first line in selection to control the tab amount
+        let tab_amount = 4 - indent("'<") % 4
+    else
+        let tab_amount = 4 - indent(".") % 4
+    endif
 
     " If already aligned, tab over 4
     if(tab_amount == 0)
@@ -331,18 +426,25 @@ vnoremap <Tab> :call TabHotkey(1)<cr>:echo ""<cr>gv
 
 
 " Untab
-" For range, does not fix indentation of individual lines.
-" Assumes indents are already divisible by 4
+" For range, does not fix indentation of individual lines
 function! UnTabHotkey(with_range) range
     silent! norm mz
 
+    if(a:with_range==1)
+        " Use the first line in selection to control the tab amount
+        let marker = "'<'"
+    else
+        let marker = "."
+    endif
+    
     " If no indentation, just exit
-    if(indent('.') == 0)
+    if(indent(marker) == 0)
         return 0
     endif
 
     " Get number of spaces past a clean multiple of 4
-    let untab_amount = indent('.') % 4
+    let untab_amount = indent(marker) % 4
+    
     if(untab_amount == 0)
         let untab_amount = 4
     endif
@@ -444,8 +546,6 @@ nnoremap  :call SwitchToRespectiveFile()<cr>
 inoremap  :call SwitchToRespectiveFile()<cr>
 
 
-" From_uppercase == 1: convert CAPS_WITH_UNDERSCORES to CapsWithUnderscores
-" From_uppercase == 0: convert caps_with_underscores to CapsWithUnderscores
 function! ConvertCaps()
     " Get number of underscores
     let underscore_cnt = strlen(substitute(expand('<cword>'), "[^_]", "", "g"))
@@ -539,3 +639,7 @@ function! CreatePenguin()
     " Move to first 'todo' string
     silent! norm /TODOzz
 endfunction!
+
+syn match cType "\h\w*_t\w\@!"
+syn match cType "\w\@<!boolean\w\@!"
+syn match cType "\w\@<!u\{0,1}int\d\{0,3}\w\@!"

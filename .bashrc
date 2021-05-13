@@ -116,16 +116,19 @@ if ! shopt -oq posix; then
   fi
 fi
 
+# Stubbornly use vim everywhere
 set -o vi
+
+# But I still like these
 bind -m vi-insert "\C-p.":previous-history
 bind -m vi-insert "\C-n.":next-history
 bind -m vi-insert "\C-a.":beginning-of-line
 bind -m vi-insert "\C-e.":end-of-line
 
-stty -ixon
-
+# Aliases
 alias py="python3"
-alias go="gnome-open"
+alias go="xdg-open"
+# Open all git conflicts
 alias con="vi \$(git ls-files -u | cut -f 2 | sort -u)"
 alias vi="vim"
 alias iv="vim"

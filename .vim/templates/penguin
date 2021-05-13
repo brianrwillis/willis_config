@@ -1,0 +1,66 @@
+# ===============================================================================
+#
+# Name:       penguin_template.py
+#
+# Purpose:    TODO: Fill me out. What the hell am I??
+#
+# Author:     Brian Willis
+#
+# Created:    templatetime
+# Last Rev:   Jan 12, 2021
+# By:         Brian Willis
+#
+# Copyright:  Capella Space Corporation
+#             San Francisco
+#             United States of America
+#
+# ===============================================================================
+
+import argparse
+import importlib
+
+from . import penguin_script as ps
+importlib.reload(ps)
+from .libs import penguin_file_lib as pfl
+importlib.reload(pfl)
+
+DESCRIPTION = '''
+TODO: Fill me out. What the hell am I??
+'''
+
+class PenguinTemplate(ps.PenguinScript):
+    # Script requirements
+    # Whitelists
+    REQUIRED_ENVIRONMENTS = []
+    REQUIRED_GENERATIONS = []
+    REQUIRED_SPACECRAFT_IDS = []
+    REQUIRED_HARDWARE = []
+    REQUIRED_CLIENTS = {
+    }
+    REQUIRED_APIS = {
+    }
+    # Blacklists
+    DISALLOWED_ENVIRONMENTS = []
+    DISALLOWED_GENERATIONS = []
+    DISALLOWED_SPACECRAFT_IDS = []
+
+    def __init__(self, parent, rx_queues, args, config, slot_id, activity_id):
+        ''' Initialize the Script object
+        Inputs:
+            see penguin_script.PenguinScript
+        '''
+        parser = argparse.ArgumentParser(description=DESCRIPTION)
+        parser.add_argument('--template',
+                    help='TODO: template arg')
+
+        super(PenguinTemplate, self).__init__(
+            'PenguinTemplate', parent, rx_queues, parser, args, config, slot_id, activity_id
+        )
+
+    def script_action(self):
+
+
+    def script_cleanup(self):
+        pass
+
+
