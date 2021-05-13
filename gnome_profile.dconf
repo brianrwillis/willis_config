@@ -1,0 +1,10 @@
+[:b1dcc9dd-5262-4d8d-a863-c897e6d979b9]
+audible-bell=false
+background-color='rgb(28,28,28)'
+background-transparency-percent=4
+custom-command='tmux'
+use-custom-command=true
+use-theme-colors=false
+use-theme-transparency=false
+use-transparent-background=true
+visible-name='harumph'
