@@ -2,7 +2,7 @@
 cp ~/.ackrc ~/.bashrc ~/.inputrc ~/.tmux.conf ~/.profile ~/.vimrc .
 
 # Vim stuff
-cp -r ~/.vim/after/syntax .vim/after/
+cp -r ~/.vim/after .vim/
 cp -r ~/.vim/colors .vim
 cp -r ~/.vim/templates .vim
 

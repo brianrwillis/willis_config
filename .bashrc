@@ -47,12 +47,12 @@ esac
 
 if [ -n "$force_color_prompt" ]; then
     if [ -x /usr/bin/tput ] && tput setaf 1 >&/dev/null; then
-	# We have color support; assume it's compliant with Ecma-48
-	# (ISO/IEC-6429). (Lack of such support is extremely rare, and such
-	# a case would tend to support setf rather than setaf.)
-	color_prompt=yes
+    # We have color support; assume it's compliant with Ecma-48
+    # (ISO/IEC-6429). (Lack of such support is extremely rare, and such
+    # a case would tend to support setf rather than setaf.)
+    color_prompt=yes
     else
-	color_prompt=
+    color_prompt=
     fi
 fi
 
@@ -138,13 +138,80 @@ alias akc="ack"
 alias SO="source ~/.bashrc && source ~/.bash_aliases && source ~/.profile"
 alias So="SO"
 
+# Stop that
+ack() {
+    if [[ ($@ == "V") || ($@ == "v") ]]; then
+        command echo "Stop that"
+    else
+        command ack "$@"
+    fi
+}
+
+make() {
+    if [[ ($@ == "urn") ]]; then
+        command echo "\
+         ______
+        (______)
+          )  (
+        ,'    \`.
+       (        )
+        \`.    .'
+          )  (
+         /____\\
+    "
+    else
+        command make "$@"
+    fi
+}
+
+# find -name "*<thing>*" is too much to fuckin type god damn it
+# excludes build dirs, swap files, etc
+fin () {
+    local suds=""
+
+    if [[ ($# == 0) ]]; then
+        echo "Usage: fin [dir] term"
+    else
+        if [[ ($# == 1) ]]; then
+            local path=.
+            local search=$1
+        elif [[ ($# == 2) ]]; then
+            local path=$1
+            local search=$2
+    
+            if [[ ($1 == "/") ]]; then
+                local suds="sudo"
+            fi
+        fi
+
+        command $suds find "$path" -name "*$search*" ! -path "*/build/*" \
+                                                     ! -path "*/\.git/*" \
+                                                     ! -path "/*undodir/*" \
+                                                     ! -path "*/outputs/*" \
+                                                     ! -name "*\.swp" \
+                                                     ! -name "*\.swo" \
+                                                     ! -name "*\.swm" \
+                                                     ! -name "*\.swn"
+    fi
+}
+
+# do a gcc but also `-I` every single dir in the PWD
+gccE() {
+    if [[ ($# == 0) ]]; then
+        echo "\$1: input file; \$2+ are args"
+    else
+        gcc ${@:2} $1 $(find -type d | grep -v '\.git' | sed 's/^/-I/' | tr '\n\' ' ' 2>/dev/null) -I/opt/Microsemi_SoftConsole_v6.0/CMSIS/V4.5/Include
+    fi
+}
+
+
 # If we don't study the commands of the past, we're doomed to retype them
 HISTSIZE=100000
 HISTFILESIZE=100000
 
 # Share bash history across all terminals:
 # Avoid duplicates
-HISTCONTROL=ignoredups:erasedups  
+HISTCONTROL=ignoredups:erasedups
 # When the shell exits, append to the history file instead of overwriting it
 shopt -s histappend
 # After each command, append to the history file and reread it
@@ -162,3 +229,6 @@ export EDITOR="vim"
 # Dont close the bash shell after period of no activity
 # (WHY DOES THIS EXIST)
 export TMOUT=0
+
+# Disable touchscreen
+xinput disable $(xinput --list | grep "Touchscreen" | awk '{print substr($5,4)}')

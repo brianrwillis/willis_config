@@ -1,5 +1,5 @@
-" NOTE: requires vim to be compiled with +clipboard,
-" and ctags + xclip to be installed!
+" NOTE: requires vim to be compiled with +clipboard
+" (or install vim-gtk), and ctags + xclip to be installed!
 
 " TODO; remap change/delete to put into th black hole register
 "remap 'onoremap' for 'around' x
@@ -10,7 +10,14 @@
 
 "TODO: increase paths, no path=**
 
-" TODO: %s/( \(.*\) )/(\1)/g
+
+" Useful commands
+" Loop through lines and do an operation based off conditional (e.g., pad lines up to a float ratio)
+" let g:i = 0
+" let g:i = g:i + 1 | let diff = 1163.0/445.0 | if (g:i < diff) | exe "norm yyp" | else | exe "norm j" | let g:i = g:i - diff | endif
+
+" Do math on numbers in file (e.g., floats mutliply by 2)
+" s/\(-*\d.*,\@<!\)/\=str2float(submatch(0))*2
 
 " This mess tells us if the current tmux pane is running vim. invoke with:
 " let is_vim = system(g:is_vim)[0]
@@ -34,30 +41,44 @@ set timeoutlen=250              " Quarter second delays on hotkeys
 set ttimeoutlen=250
 set cmdheight=2                 " Less 'Press enter to continue' on cmd line
 set backspace=indent,eol,start  " Fix backspacing after a newline
+set display=lastline            " Show partial word-wrapped lines
+set showtabline=2               " Always show tabs, even if only one file is open
 
 let ch_syntax_for_h=1           " Header filetype is 'ch'
-
-" Set scroll to ~25% of a page
-:autocmd CursorMoved,BufEnter * if winheight(0) > 15 | set scroll=15 | endif
-
-" Set scroll offset to sixth of a page
-:autocmd BufEnter * if winheight(0) > 15 | let &scrolloff = winheight(0) / 6 | endif
-
-" Force the cursor to cmd mode on entering vim
-:autocmd VimEnter * norm! 
-
-" Open to last position
-autocmd BufReadPost * if line("'\"") > 0 && line("'\"") <= line("$") | exe "normal! g`\"" | endif
-
-" Force syntax on buf open
-autocmd BufEnter * syntax enable
-
-syntax on
 
 " Colors
 set background=dark
 let g:gruvbox_contrast_dark='hard'
 colorscheme gruvbox
+
+" Force transparent background first here
+" highlight Normal guibg=NONE ctermbg=NONE
+" highlight NonText guibg=NONE ctermbg=NONE
+
+" Force transparent background again on buf open
+" FIXME: figure out what in gruvbox is fucking with this
+" autocmd BufEnter * highlight Normal guibg=NONE ctermbg=NONE
+" autocmd BufEnter * highlight NonText guibg=NONE ctermbg=NONE
+
+" Set scroll (Ctrl-U/D)
+" FIXME: something is changing this randomly but :verbose only lists this line as
+"        affecting the setting, use CursorMoved to force on
+autocmd BufEnter,CursorMoved * let &scroll=min([15, winheight(0) / 3])
+
+" Set scroll offset to seventh of a page
+" autocmd BufEnter,CursorMoved * let &scrolloff=min([15, winheight(0) / 7])
+
+" Force the cursor to cmd mode on entering vim
+autocmd VimEnter * norm! 
+
+" Open to last position
+autocmd BufReadPost * if line("'\"") > 0 && line("'\"") <= line("$") | exe "normal! g`\"" | endif
+
+" Force syntax on buf open
+autocmd VimEnter * syntax enable
+
+" Preserve clipboard on exit, requires xclip on system
+autocmd VimLeave * call system("xclip -selection clipboard -i", getreg('+'))
 
 " Blinky cursor in insert mode
 let &t_SI = "\<esc>[5 q"
@@ -76,17 +97,14 @@ set incsearch
 " Don't highlight shit on source vimrc wtf
 :nohls
 
-" Preserve clipboard on exit, requires xclip on system
-autocmd VimLeave * call system("xclip -selection clipboard -i", getreg('+'))
-
 " Always copy yank to clipboard
 " nnoremap y "*y:call system("xclip -selection clipboard -i", getreg('*'))<cr>
 " vnoremap y "*y:call system("xclip -selection clipboard -i", getreg('*'))<cr>
 
 " Ctrl-H -> open new tab with file list of current dir
 " Ctrl-G -> open current tab with file list of current dir
-nnoremap  :tabe %:h
-nnoremap  :e %:h
+nnoremap  :tabe %:h/
+nnoremap  :e %:h/
 
 " fucksake
 nnoremap tg gt
@@ -114,23 +132,62 @@ vnoremap K <nop>
 " Make D/C delete without overwriting reg
 nnoremap D "_d
 vnoremap D "_d
+nnoremap DD "_dd
 nnoremap C "_c
 vnoremap C "_c
+nnoremap CC "_cc
+
+" cc = change to first char
+nnoremap cc $v^"_c
 
 " I don't need ex mode
+nnoremap q: <nop>
 nnoremap Q <nop>
 
 " Don't jump on first match
 nnoremap # :keepjumps normal! mz#`z<cr>
 nnoremap * :keepjumps normal! mz*`z<cr>
 
-" Center screen on search results
+
+" Center screen on search results, ctag jump, Ctrl-o
 nnoremap n nzz
 nnoremap N Nzz
+nnoremap  zz
+" nnoremap G Gzz
+" vnoremap G Gzz
 
-" On ctag find, center screen
-nnoremap  zz
-nnoremap  zz
+" TODO: fix these
+function! SmartCTagJump()
+    :call system('[[ ! -z "$CTAG_PID" ]] && wait $CTAG_PID')
+    silent! norm! zz
+endfunction!
+nnoremap  :call SmartCTagJump()<cr>
+
+function! SmartCTagBackJump()
+    :call system('[[ ! -z "$CTAG_PID" ]] && wait $CTAG_PID')
+    silent! norm! 
+endfunction!
+nnoremap  :call SmartCTagBackJump()<cr>
+
+
+" Ctrl-\ = open this tag in a new window
+function! SmartCtagJumpNewTab()
+    :call system('[[ ! -z "$CTAG_PID" ]] && wait $CTAG_PID')
+    let file = expand('%')
+    exe ":tabnew " . file
+    norm 
+endfunction!
+nnoremap  :call SmartCtagJumpNewTab()<cr>
+
+
+" Previous in jump list (remap Ctrl-I)
+nnoremap  <C-I>zz
+
+" Ctrl-n = jump to next c function
+" FIXME
+" nnoremap  /^\(u\{0,1\}int\d*\)\\|^void\\|^\S*_t
+nnoremap  /^\S\+.*(zz
+
 
 " Don't overwrite clipboard with cuts
 " TODO: WORDs dont work?
@@ -176,16 +233,12 @@ xmap p pgvy
 " When sourcing vimrc, first try and remove all settings
 command! So mapc | set all& | so ~/.vimrc | :filetype detect
 command! SO mapc | set all& | so ~/.vimrc | :filetype detect
-" Previous in jump list (remap Ctrl-I)
-nnoremap  <C-I>
 
 " '/' in visual mode means 'search for this'
 " vnoremap // y/\V<C-R>=escape(@",'/\')<CR><CR>
 " TODO
 
-" Ctrl-\ = open this tag in a new window
-nnoremap  :tabnew %<cr><C-o><C-]>
-
+" FIXME
 function! Suds()
     exe "norm :w !sudo tee %"
 endfunction!
@@ -199,7 +252,7 @@ function! OnSave()
 
     if(&modified)
         let current_date=strftime('%b %d, %Y')
-        silent! 0,20g/Last Rev/exe "norm /RevWv$h\"zy"
+        silent! 0,20g/Last Rev/exe "norm /Revv$h\"zy"
         if(current_date!=getreg('z'))
             silent! 0,20g/Last Rev/exe "norm /RevW\"_d$a" . current_date
         endif
@@ -231,15 +284,18 @@ function! ReloadAll()
 
     " Reload all
     :set autoread
-    :set noconfirm 
-    :bufdo! e!
+    :set noconfirm
+    silent! bufdo! e!
 
     " Restore position
     silent! exe "e! " . file
     call winrestview(l:winview)
 
-    :set confirm 
+    :set confirm
     :set noautoread
+
+    " Force reload syntax
+    :syn off | syn on
 endfunction!
 command! E :call ReloadAll()
 
@@ -293,9 +349,9 @@ function! CommentHotkey(with_range) range
     :filetype detect
 
     " Get comment symbol per filetype
-    if(&ft=='vim')
+    if (&ft == 'vim')
         let symbol = "\""
-    elseif((&ft == 'c') || (&ft == 'cpp') || (&ft == 'ch'))
+    elseif((&ft == 'c') || (&ft == 'cpp') || (&ft == 'ch') || (&ft == 'rust'))
         let symbol = "\/\/"
     else
         let symbol = "#"
@@ -321,31 +377,41 @@ function! CommentHotkey(with_range) range
         if(symbol_cnt != line_cnt)
             " Insert comment
             exe a:firstline . "," . a:lastline . "norm I" . symbol . " "
+            let comment = 1
          else
             " Remove comments
             silent! exe a:firstline . "," . a:lastline . "s:" . symbol . " ::"
             silent! exe a:firstline . "," . a:lastline . "s:^" . symbol . "::"
+            let comment = 0
         endif
     else
         " Add/remove comment symbol
         if(symbol_cnt == 0)
             " Insert comment
             exe a:firstline . "," . a:lastline . "norm I" . symbol . " "
+            let comment = 1
         else
             " Remove comments
             silent! exe a:firstline . "," . a:lastline . "s:" . symbol . " ::"
             silent! exe a:firstline . "," . a:lastline . "s:^" . symbol . "::"
+            let comment = 0
         endif
      endif
 
     " Restore position
     silent! norm `z
     call winrestview(l:winview)
-    norm ll
 
-    " Move one more char back for //
-    if((&ft == 'c') || (&ft == 'cpp') || (&ft == 'ch'))
-        norm l
+    if (symbol == "\/\/")
+        let move_cnt = 3
+    else
+        let move_cnt = 2
+    endif
+
+    if (comment)
+        exe "norm " . move_cnt . "l"
+    else
+        exe "norm " . move_cnt . "h"
     endif
 endfunction!
 nnoremap  :call CommentHotkey(0)<cr>
@@ -361,7 +427,7 @@ vnoremap  :call CommentHotkey(1)<cr>
     " let p = getpos('.')
     " let p[2] = p[2] + 1
     " :call setpos('.', p)
-" 
+"
     " " Are we on the first col or is the char under the cursor a space
     " if ((col('.') == 1) || (matchstr(getline('.'), '\%' . col('.') . 'c.') == ' '))
         " " For some reason, we need to use 'a' if the line is only whitespaces
@@ -384,8 +450,8 @@ vnoremap  :call CommentHotkey(1)<cr>
 
 " Tab for completion
 " TODO: just do if no text before cursor, do tab
-inoremap <tab> <C-P>
-inoremap <S-tab> <C-N>
+" inoremap <tab> <C-P>
+" inoremap <S-tab> <C-N>
 
 " Tab
 " For range, does not fix indentation of individual lines
@@ -436,7 +502,7 @@ function! UnTabHotkey(with_range) range
     else
         let marker = "."
     endif
-    
+
     " If no indentation, just exit
     if(indent(marker) == 0)
         return 0
@@ -444,7 +510,7 @@ function! UnTabHotkey(with_range) range
 
     " Get number of spaces past a clean multiple of 4
     let untab_amount = indent(marker) % 4
-    
+
     if(untab_amount == 0)
         let untab_amount = 4
     endif
@@ -476,9 +542,9 @@ endfunction!
 nnoremap [Z :call UnTabHotkey(0)<cr>:echo ""<cr>
  " Warning; stupid. If after untabbing we would be on column 1,
  " Want to return to insert mode via 'i'. Otherwise, want 'a'
-" inoremap <expr> [Z (col('.') <= 5) ?
-    " \'<space><backspace>:call UnTabHotkey(0)<cr>:echo ""<cr>i':
-    " \'<space><backspace>:call UnTabHotkey(0)<cr>:echo ""<cr>a'
+inoremap <expr> [Z (col('.') <= 5) ?
+    \'<space><backspace>:call UnTabHotkey(0)<cr>:echo ""<cr>i':
+    \'<space><backspace>:call UnTabHotkey(0)<cr>:echo ""<cr>a'
 vnoremap [Z :call UnTabHotkey(1)<cr>:echo ""<cr>gv
 
 
@@ -526,9 +592,14 @@ function! SwitchToRespectiveFile()
     endfunction!
 
     " If opened a file with no extension (didn't enter 'c' or 'h' after tabbing), open .c
+    " Unless this is a CHANGELOG
     if (file[len(expand('%:f'))-1] == ".")
         let file = file[0:len(file)-2]
-        :call OpenCppOrC(file)
+        if stridx("CHANGELOG", file) >= 0
+            exe "e " . file . "." . expand('%:p:h:t') . ".md"
+        else
+            :call OpenCppOrC(file)
+        endif
         return
     endif
 
@@ -580,12 +651,12 @@ function! LinearIncrement() range
     " Don't touch first line in selection
     let curr_line = getpos("'<")[1] + 1
     let last_line = getpos("'>")[1]
+    let col = getpos("'>")[2]
 
     let i = curr_line
     while i <= last_line
         " If a digit does not exist on this line, skip
-        let col = match(getline(i), '\(\d\)')
-        if col < 0
+        if match(getline(i), '\(\d\)') < 0
             continue
         endif
 
@@ -599,6 +670,44 @@ function! LinearIncrement() range
         let i += 1
     endwhile
 endfunction!
+
+
+" Loop through macro and align all '\'s
+function! AlignSlashes() range
+    let max_len = 0
+
+    let curr_line = getpos("'<")[1]
+    let last_line = getpos("'>")[1]
+
+    " Remove all trailing '\'s
+    silent! :'<,'>s/\\\s*$//g
+
+    " Remove all whitespace on empty lines
+    let _s=@/
+    silent! :%s/\s\+$//e
+    let @/=_s
+
+    " Find max line length
+    let i = curr_line
+    while i <= last_line
+        let len = strwidth(getline(i))
+        if (len > max_len)
+            let max_len = len
+        endif
+        let i = i + 1
+    endwhile
+
+    " Loop again, adding '\'s
+    let i = curr_line
+    while i <= last_line
+        " If a digit does not exist on this line, skip
+        let len = strwidth(getline(i))
+        let spaces = max_len - len + 1
+        exe "norm " . i . "G" . spaces . "A A\\j"
+        let i = i + 1
+    endwhile
+endfunction!
+
 
 " Create a c program from the c template file
 function! CreateC()
@@ -639,7 +748,3 @@ function! CreatePenguin()
     " Move to first 'todo' string
     silent! norm /TODOzz
 endfunction!
-
-syn match cType "\h\w*_t\w\@!"
-syn match cType "\w\@<!boolean\w\@!"
-syn match cType "\w\@<!u\{0,1}int\d\{0,3}\w\@!"

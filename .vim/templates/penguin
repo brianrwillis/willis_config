@@ -7,8 +7,8 @@
 # Author:     Brian Willis
 #
 # Created:    templatetime
-# Last Rev:   Jan 12, 2021
-# By:         Brian Willis
+# Last Jun 23, 2021
+# Brian Willis
 #
 # Copyright:  Capella Space Corporation
 #             San Francisco
@@ -51,7 +51,7 @@ class PenguinTemplate(ps.PenguinScript):
         '''
         parser = argparse.ArgumentParser(description=DESCRIPTION)
         parser.add_argument('--template',
-                    help='TODO: template arg')
+                    help = 'TODO: template arg')
 
         super(PenguinTemplate, self).__init__(
             'PenguinTemplate', parent, rx_queues, parser, args, config, slot_id, activity_id
@@ -62,5 +62,3 @@ class PenguinTemplate(ps.PenguinScript):
 
     def script_cleanup(self):
         pass
-
-

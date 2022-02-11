@@ -1,11 +1,11 @@
 # Vim dirs
-mkdir ~/.vim
-mkdir ~/.vim/after
-mkdir ~/.vim/colors
-mkdir ~/.vim/undodir
+mkdir ~/.vim 2> /dev/null
+mkdir ~/.vim/after 2> /dev/null
+mkdir ~/.vim/colors 2> /dev/null
+mkdir ~/.vim/undodir 2> /dev/null
 
 # Copy to home dir
-cp --parents .bashrc .profile .ackrc .inputrc .tmux.conf .vimrc .vim ~
+cp -r --parents .bashrc .profile .ackrc .inputrc .tmux.conf .vimrc .vim ~
 
 # Terminal profile
 dconf load /org/gnome/terminal/legacy/profiles:/ < gnome_profile.dconf
