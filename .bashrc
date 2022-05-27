@@ -128,12 +128,17 @@ bind -m vi-insert "\C-e.":end-of-line
 # Aliases
 alias py="python3"
 alias go="xdg-open"
+
 # Open all git conflicts
 alias con="vi \$(git ls-files -u | cut -f 2 | sort -u)"
+
 alias vi="vim"
 alias iv="vim"
 alias vo="vim"
 alias ov="vim"
+
+alias :q="echo idiot"
+
 alias akc="ack"
 alias SO="source ~/.bashrc && source ~/.bash_aliases && source ~/.profile"
 alias So="SO"
@@ -141,7 +146,7 @@ alias So="SO"
 # Stop that
 ack() {
     if [[ ($@ == "V") || ($@ == "v") ]]; then
-        command echo "Stop that"
+        command echo "stop that"
     else
         command ack "$@"
     fi
@@ -164,8 +169,36 @@ make() {
     fi
 }
 
+git() {
+    if [[ ($@ == "tag") ]]; then
+        command git tag --sort=-creatordate
+    else
+        command git "$@"
+    fi
+}
+
+hex() {
+    if [[ ($# == 0) ]]; then
+        echo "Usage: hex number [lower]"
+    else
+        if [[ ($2 == "lower") ]]; then
+            python3 -c "print('0x%x' % $1)"
+        else
+            python3 -c "print('0x%X' % $1)"
+        fi
+    fi
+}
+
+dec() {
+    if [[ ($# == 0) ]]; then
+        echo "Usage: dec [0x]number"
+    else
+        python3 -c "print('%d' % (int('$1', 0) if '0x' in '$1' else int('0x' + '$1', 0)))"
+    fi
+}
+
 # find -name "*<thing>*" is too much to fuckin type god damn it
-# excludes build dirs, swap files, etc
+# excludes swap files, etc
 fin () {
     local suds=""
 
@@ -178,20 +211,19 @@ fin () {
         elif [[ ($# == 2) ]]; then
             local path=$1
             local search=$2
-    
+
             if [[ ($1 == "/") ]]; then
                 local suds="sudo"
             fi
         fi
 
-        command $suds find "$path" -name "*$search*" ! -path "*/build/*" \
-                                                     ! -path "*/\.git/*" \
-                                                     ! -path "/*undodir/*" \
-                                                     ! -path "*/outputs/*" \
-                                                     ! -name "*\.swp" \
-                                                     ! -name "*\.swo" \
-                                                     ! -name "*\.swm" \
-                                                     ! -name "*\.swn"
+        command $suds find "$path" -name "*$search*" -type f ! -path "*/\.git/*"   \
+                                                             ! -path "/*undodir/*" \
+                                                             ! -path "*/outputs/*" \
+                                                             ! -name "*\.swp"      \
+                                                             ! -name "*\.swo"      \
+                                                             ! -name "*\.swm"      \
+                                                             ! -name "*\.swn"
     fi
 }
 
@@ -201,6 +233,22 @@ gccE() {
         echo "\$1: input file; \$2+ are args"
     else
         gcc ${@:2} $1 $(find -type d | grep -v '\.git' | sed 's/^/-I/' | tr '\n\' ' ' 2>/dev/null) -I/opt/Microsemi_SoftConsole_v6.0/CMSIS/V4.5/Include
+    fi
+}
+
+# Print all the processes using swap space in order
+print-swap() {
+    for file in /proc/*/status ; do
+        awk '/VmSwap|Name/{printf $2 " " $3}END{ print ""}' $file
+    done | sort -k 2 -n -r | less
+}
+
+# Pipe shit to the clipboard
+c() {
+    if [[ ($# == 0) ]]; then
+        echo "Usage: c <command>"
+    else
+       "$@" 2>&1 | tee >(xclip -i -selection clipboard)
     fi
 }
 

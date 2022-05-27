@@ -44,6 +44,8 @@ set backspace=indent,eol,start  " Fix backspacing after a newline
 set display=lastline            " Show partial word-wrapped lines
 set showtabline=2               " Always show tabs, even if only one file is open
 
+set nofixendofline              " Don't autoappend a newline when saving a file
+
 let ch_syntax_for_h=1           " Header filetype is 'ch'
 
 " Colors
@@ -80,6 +82,17 @@ autocmd VimEnter * syntax enable
 " Preserve clipboard on exit, requires xclip on system
 autocmd VimLeave * call system("xclip -selection clipboard -i", getreg('+'))
 
+" Auto-close the quickfix file created by `copen` after hitting enter 
+" (and set cursorline, center screen)
+autocmd FileType qf nnoremap <buffer> <CR> <CR>:cclose<CR>zz
+
+" Hitting Ctrl-L while in quickfix file will open file under cursor 
+" (and set cursorline, center screen)
+autocmd FileType qf nnoremap <buffer>  <CR>zzj
+
+" Ctrl-L: quickfix implementation for the word under the cursor
+nnoremap  :grep! "\<<cword>\>" `find -type f \( -name "*.c" -o -name "*.h" -o -name "*.py" \)`<CR>:copen<CR>
+
 " Blinky cursor in insert mode
 let &t_SI = "\<esc>[5 q"
 let &t_SR = "\<esc>[5 q"
@@ -110,7 +123,7 @@ nnoremap  :e %:h/
 nnoremap tg gt
 nnoremap Tg gT
 
-" Ctrl-j = ESC and exit highlighted search
+" Ctrl-j = ESC and exit highlighted search, turn off cursorline
 nnoremap <C-j> :silent! nohls<cr>:echo ""<cr>
 vnoremap <C-j> :silent! nohls<cr>:echo ""<cr>
 inoremap <C-j> :silent! nohls<cr>:echo ""<cr>
@@ -140,8 +153,11 @@ nnoremap CC "_cc
 " cc = change to first char
 nnoremap cc $v^"_c
 
-" I don't need ex mode
+" Disable command history
+" FIXME: why does this work intermittently?
 nnoremap q: <nop>
+
+" I don't need ex mode
 nnoremap Q <nop>
 
 " Don't jump on first match
@@ -153,31 +169,25 @@ nnoremap * :keepjumps normal! mz*`z<cr>
 nnoremap n nzz
 nnoremap N Nzz
 nnoremap  zz
-" nnoremap G Gzz
-" vnoremap G Gzz
-
-" TODO: fix these
-function! SmartCTagJump()
-    :call system('[[ ! -z "$CTAG_PID" ]] && wait $CTAG_PID')
-    silent! norm! zz
-endfunction!
-nnoremap  :call SmartCTagJump()<cr>
-
-function! SmartCTagBackJump()
-    :call system('[[ ! -z "$CTAG_PID" ]] && wait $CTAG_PID')
-    silent! norm! 
-endfunction!
-nnoremap  :call SmartCTagBackJump()<cr>
 
 
-" Ctrl-\ = open this tag in a new window
-function! SmartCtagJumpNewTab()
-    :call system('[[ ! -z "$CTAG_PID" ]] && wait $CTAG_PID')
+" Center screen on ctag jumps
+nnoremap  zz
+nnoremap  zz
+
+" Ctrl-\ = open this tag in a new tab
+function! CtagJumpNewTab()
     let file = expand('%')
     exe ":tabnew " . file
     norm 
+    let new_file = expand('%')
+
+    if new_file == file
+        " There was no match
+        :q!
+    endif
 endfunction!
-nnoremap  :call SmartCtagJumpNewTab()<cr>
+nnoremap  :call CtagJumpNewTab()<cr>zz
 
 
 " Previous in jump list (remap Ctrl-I)
@@ -186,7 +196,7 @@ nnoremap  <C-I>zz
 " Ctrl-n = jump to next c function
 " FIXME
 " nnoremap  /^\(u\{0,1\}int\d*\)\\|^void\\|^\S*_t
-nnoremap  /^\S\+.*(zz
+" nnoremap  /^\S\+.*(zz
 
 
 " Don't overwrite clipboard with cuts
@@ -234,10 +244,6 @@ xmap p pgvy
 command! So mapc | set all& | so ~/.vimrc | :filetype detect
 command! SO mapc | set all& | so ~/.vimrc | :filetype detect
 
-" '/' in visual mode means 'search for this'
-" vnoremap // y/\V<C-R>=escape(@",'/\')<CR><CR>
-" TODO
-
 " FIXME
 function! Suds()
     exe "norm :w !sudo tee %"
@@ -277,10 +283,13 @@ augroup BWCCreateDir
 augroup END
 
 
-" :E to reload all open buffers
+" :E to destroy all swp files and reload all open buffers
 function! ReloadAll()
     let l:winview = winsaveview()
     let file = expand('%:f')
+
+    " Destroy all swp files
+    :call system("rm -rf `find -type f -name \"*.sw*\"`")
 
     " Reload all
     :set autoread
@@ -304,23 +313,17 @@ command! E :call ReloadAll()
 function! TagGen()
     :filetype detect
     silent! :call system("rm tags")
+
     if ((&ft == 'c') || (&ft == 'ch'))
-        silent! !ctags -R . /opt/capella-msp430/msp430-elf/include/msp430fr5964.h 2>/dev/null &
+        silent! !ctags --c-kinds=+p -R . /opt/capella-msp430/msp430-elf/include/msp430fr5964.h 2>/dev/null &
     else
         silent! !ctags -R . 2>/dev/null &
     endif
 
     " Clear the screen
-    norm 
+    redraw!
 endfunction!
 noremap <F4> :call TagGen()<cr>
-
-
-" Print a status check
-function! PrintStatusCheck()
-    norm! oif (status != CFE_SUCCESS) {return status;}
-endfunction!
-noremap  :call PrintStatusCheck()<cr>
 
 
 " Close all non-active buffers
@@ -450,8 +453,8 @@ vnoremap  :call CommentHotkey(1)<cr>
 
 " Tab for completion
 " TODO: just do if no text before cursor, do tab
-" inoremap <tab> <C-P>
-" inoremap <S-tab> <C-N>
+inoremap <tab> <C-P>
+inoremap <S-tab> <C-N>
 
 " Tab
 " For range, does not fix indentation of individual lines
@@ -542,9 +545,9 @@ endfunction!
 nnoremap [Z :call UnTabHotkey(0)<cr>:echo ""<cr>
  " Warning; stupid. If after untabbing we would be on column 1,
  " Want to return to insert mode via 'i'. Otherwise, want 'a'
-inoremap <expr> [Z (col('.') <= 5) ?
-    \'<space><backspace>:call UnTabHotkey(0)<cr>:echo ""<cr>i':
-    \'<space><backspace>:call UnTabHotkey(0)<cr>:echo ""<cr>a'
+" inoremap <expr> [Z (col('.') <= 5) ?
+    " \'<space><backspace>:call UnTabHotkey(0)<cr>:echo ""<cr>i':
+    " \'<space><backspace>:call UnTabHotkey(0)<cr>:echo ""<cr>a'
 vnoremap [Z :call UnTabHotkey(1)<cr>:echo ""<cr>gv
 
 
@@ -647,6 +650,7 @@ endfunction!
 " 0   0  ->  0   1
 " 0   0      0   2
 " FIXME: this is slow
+" FIXME: does not work if there is a newline between entries
 function! LinearIncrement() range
     " Don't touch first line in selection
     let curr_line = getpos("'<")[1] + 1
@@ -674,6 +678,7 @@ endfunction!
 
 " Loop through macro and align all '\'s
 function! AlignSlashes() range
+    let l:winview = winsaveview()
     let max_len = 0
 
     let curr_line = getpos("'<")[1]
@@ -706,6 +711,8 @@ function! AlignSlashes() range
         exe "norm " . i . "G" . spaces . "A A\\j"
         let i = i + 1
     endwhile
+
+    call winrestview(l:winview)
 endfunction!
 
 

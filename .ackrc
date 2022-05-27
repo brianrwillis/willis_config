@@ -17,4 +17,4 @@
 --ignore-file=ext:jpg
 --ignore-file=ext:ixf
 --ignore-file=ext:cxf
---ignore-file=ext:om
+--ignore-file=ext:omc

@@ -7,8 +7,8 @@
 # Author:     Brian Willis
 #
 # Created:    templatetime
-# Last Jun 23, 2021
-# Brian Willis
+# Last Rev:   Mar 31, 2022
+# By:         Brian Willis
 #
 # Copyright:  Capella Space Corporation
 #             San Francisco
@@ -17,12 +17,8 @@
 # ===============================================================================
 
 import argparse
-import importlib
 
-from . import penguin_script as ps
-importlib.reload(ps)
-from .libs import penguin_file_lib as pfl
-importlib.reload(pfl)
+from ... import penguin_script as ps
 
 DESCRIPTION = '''
 TODO: Fill me out. What the hell am I??
@@ -49,9 +45,9 @@ class PenguinTemplate(ps.PenguinScript):
         Inputs:
             see penguin_script.PenguinScript
         '''
-        parser = argparse.ArgumentParser(description=DESCRIPTION)
+        parser = argparse.ArgumentParser(description = DESCRIPTION)
         parser.add_argument('--template',
-                    help = 'TODO: template arg')
+                            help='TODO: template arg')
 
         super(PenguinTemplate, self).__init__(
             'PenguinTemplate', parent, rx_queues, parser, args, config, slot_id, activity_id
