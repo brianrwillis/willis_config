@@ -52,6 +52,7 @@ let ch_syntax_for_h=1           " Header filetype is 'ch'
 set background=dark
 let g:gruvbox_contrast_dark='hard'
 colorscheme gruvbox
+filetype detect
 
 " Force transparent background first here
 " highlight Normal guibg=NONE ctermbg=NONE
