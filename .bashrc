@@ -129,9 +129,6 @@ bind -m vi-insert "\C-e.":end-of-line
 alias py="python3"
 alias go="xdg-open"
 
-# Open all git conflicts
-alias con="vi \$(git ls-files -u | cut -f 2 | sort -u)"
-
 alias vi="vim"
 alias iv="vim"
 alias vo="vim"
@@ -142,6 +139,18 @@ alias :q="echo idiot"
 alias akc="ack"
 alias SO="source ~/.bashrc && source ~/.bash_aliases && source ~/.profile"
 alias So="SO"
+
+# Open all git conflicts
+con() {
+    all_files=$(git ls-files -u | cut -f 2 | sort -u)
+    non_directories=()
+    for x in $all_files; do
+        [ -d "$x" ] || non_directories+=("$x")
+    done
+    echo $all_files
+    echo $non_directories
+    command vi -p ${non_directories[@]}
+}
 
 # Stop that
 ack() {
@@ -198,7 +207,7 @@ dec() {
 }
 
 # find -name "*<thing>*" is too much to fuckin type god damn it
-# excludes swap files, etc
+# Only includes source files!
 fin () {
     local suds=""
 
@@ -219,6 +228,12 @@ fin () {
 
         command $suds find "$path" -name "*$search*" -type f ! -path "*/\.git/*"   \
                                                              ! -path "/*undodir/*" \
+                                                             ! -path "*/outputs/*" \
+                                                             ! -path "*\.so"       \
+                                                             ! -path "*\.o"        \
+                                                             ! -path "*\.omc"      \
+                                                             ! -path "*\.a"        \
+                                                             ! -path "*\.elf"      \
                                                              ! -path "*/outputs/*" \
                                                              ! -name "*\.swp"      \
                                                              ! -name "*\.swo"      \

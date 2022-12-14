@@ -53,6 +53,9 @@ set background=dark
 let g:gruvbox_contrast_dark='hard'
 colorscheme gruvbox
 
+" Dont highlight underscores on markdown files
+:hi link markdownError Normal
+
 " Force transparent background first here
 " highlight Normal guibg=NONE ctermbg=NONE
 " highlight NonText guibg=NONE ctermbg=NONE
@@ -84,20 +87,27 @@ autocmd VimLeave * call system("xclip -selection clipboard -i", getreg('+'))
 
 " Auto-close the quickfix file created by `copen` after hitting enter 
 " (and set cursorline, center screen)
-autocmd FileType qf nnoremap <buffer> <CR> <CR>:cclose<CR>zz
+autocmd FileType qf nnoremap <buffer> <cr> <cr>:cclose<cr>zz
 
 " Hitting Ctrl-L while in quickfix file will open file under cursor 
 " (and set cursorline, center screen)
-autocmd FileType qf nnoremap <buffer>  <CR>zzj
+autocmd FileType qf nnoremap <buffer>  <cr>zzj
 
 " Ctrl-L: quickfix implementation for the word under the cursor
-nnoremap  :grep! "\<<cword>\>" `find -type f \( -name "*.c" -o -name "*.h" -o -name "*.py" \)`<CR>:copen<CR>
+nnoremap  :grep! "\<<cword>\>" `find -type f \( -name "*.c" -o -name "*.h" -o -name "*.py" \)`<cr>:copen<cr>
+" In visual mode, use the visually selected (use `"` reg)
+vnoremap  ""y:grep! "<C-R>=escape(@",'/\')<cr>" `find -type f \( -name "*.c" -o -name "*.h" -o -name "*.py" \)`<cr>:copen<cr>
+
+" `//` and `??` in visual mode: search for visual selection (use `"` reg)
+vnoremap // ""y/\V<C-R>=escape(@",'/\')<cr><cr>
+vnoremap ?? ""y?\V<C-R>=escape(@",'/\')<cr><cr>
 
 " Blinky cursor in insert mode
 let &t_SI = "\<esc>[5 q"
 let &t_SR = "\<esc>[5 q"
 let &t_EI = "\<esc>[2 q"
 
+" Set statusline stuff
 set statusline=%F\ %m%r                        " name_of_file_tail [+][RO]
 set statusline+=%=                             " start right-aligning
 set statusline+=\ alt:\ %{expand('#:t')}\ \    " alternate_file_tail
@@ -135,9 +145,6 @@ inoremap # X#
 " Don't let '[' do anything in visual mode
 vnoremap [ <nop>
 
-" Dont let K do anything in visual
-vnoremap K <nop>
-
 " Remove K functionality
 nnoremap K <nop>
 vnoremap K <nop>
@@ -156,8 +163,6 @@ nnoremap cc $v^"_c
 " Disable command history
 " FIXME: why does this work intermittently?
 nnoremap q: <nop>
-
-" I don't need ex mode
 nnoremap Q <nop>
 
 " Don't jump on first match
@@ -249,6 +254,7 @@ function! Suds()
     exe "norm :w !sudo tee %"
 endfunction!
 
+
 " On file save, make sure the last revision actually says today.
 " Assumes text 'Last Rev' is in first 20 lines.
 " Doesn't change the date if it's already correct so undo doesn't get messed up.
@@ -257,15 +263,21 @@ function! OnSave()
     silent! norm mz
 
     if(&modified)
+        " Keep the current search item
+        let search = @/
+
         let current_date=strftime('%b %d, %Y')
-        silent! 0,20g/Last Rev/exe "norm /Revv$h\"zy"
-        if(current_date!=getreg('z'))
+        silent! 0,20g/Last Rev/exe "norm /RevWv$h\"zy"
+        if(current_date != getreg('z'))
             silent! 0,20g/Last Rev/exe "norm /RevW\"_d$a" . current_date
         endif
         silent! 0,20g/By\: /exe "norm /ByWv$h\"zy"
         if(getreg('z')!="Brian Willis")
             silent! 0,20g/By\: /exe "norm /ByW\"_d$aBrian Willis"
         endif
+
+        " Restore search item
+        let @/ = search
     endif
 
     " Restore position
@@ -289,22 +301,19 @@ function! ReloadAll()
     let file = expand('%:f')
 
     " Destroy all swp files
-    :call system("rm -rf `find -type f -name \"*.sw*\"`")
+    :call system("rm -rf `find . -type f -name \"*.sw*\"`")
 
-    " Reload all
+    " Reload all, will as for conf
     :set autoread
-    :set noconfirm
-    silent! bufdo! e!
+    :checktime
 
     " Restore position
     silent! exe "e! " . file
     call winrestview(l:winview)
 
-    :set confirm
     :set noautoread
 
-    " Force reload syntax
-    :syn off | syn on
+    :echo "Done reloading files"
 endfunction!
 command! E :call ReloadAll()
 
@@ -315,13 +324,16 @@ function! TagGen()
     silent! :call system("rm tags")
 
     if ((&ft == 'c') || (&ft == 'ch'))
-        silent! !ctags --c-kinds=+p -R . /opt/capella-msp430/msp430-elf/include/msp430fr5964.h 2>/dev/null &
+        " silent! !ctags --c-kinds=+p -R . /opt/capella-msp430/msp430-elf/include/msp430fr5964.h 2>/dev/null &
+        silent! !ctags -R . /opt/capella-msp430/msp430-elf/include/msp430fr5964.h 2>/dev/null &
     else
         silent! !ctags -R . 2>/dev/null &
     endif
 
     " Clear the screen
     redraw!
+
+    echo "Done generating tags"
 endfunction!
 noremap <F4> :call TagGen()<cr>
 
@@ -553,16 +565,20 @@ vnoremap [Z :call UnTabHotkey(1)<cr>:echo ""<cr>gv
 
 " Autoformat
 function! Autoformat()
-    let l:winview = winsaveview()
     filetype detect
+    let l:winview = winsaveview()
     silent! norm mz
 
-    " Find and remove all whitespace on empty lines
-    let _s=@/
-    :%s/\s\+$//e
-    let @/=_s
-
-    retab
+    if (((&ft == 'ch') || (&ft == 'c') || (&ft == 'cpp')) && filereadable(".clang-format"))
+        " Use clang
+        :%!clang-format
+    else
+        " Find and remove all whitespace on empty lines
+        let _s=@/
+        :%s/\s\+$//e
+        let @/=_s
+        retab
+    endif
 
     silent! norm `z
     call winrestview(l:winview)
@@ -574,9 +590,9 @@ nnoremap <F5> :call Autoformat()<cr>
 function! IncludeGuard()
     let filename = expand('%:t')
     exe "norm ggi#ifndef __" . filename . "__#define __" . filename . "__"
-    exe "norm Go#endif //__" . filename . "__"
+    exe "norm Go#endif //__" . filename . "__"
     exe "1,2norm Wv$U:s/\\./_/g"
-    exe line('$') . "norm Wv$U:s/\\./_/g"
+    exe "norm GWv$U:s/\\./_/g"
 endfunction!
 
 
@@ -617,7 +633,13 @@ function! SwitchToRespectiveFile()
     endif
 endfunction!
 nnoremap  :call SwitchToRespectiveFile()<cr>
-inoremap  :call SwitchToRespectiveFile()<cr>
+
+
+" `gf` but look in more places
+" function! BetterGf()
+" 
+" endfunction!
+" nnoremap gf :call BetterGf()<cr>
 
 
 function! ConvertCaps()
@@ -685,7 +707,9 @@ function! AlignSlashes() range
     let last_line = getpos("'>")[1]
 
     " Remove all trailing '\'s
+    let _s=@/
     silent! :'<,'>s/\\\s*$//g
+    let @/=_s
 
     " Remove all whitespace on empty lines
     let _s=@/
@@ -715,6 +739,11 @@ function! AlignSlashes() range
     call winrestview(l:winview)
 endfunction!
 
+" Make status checker in c (CFE)
+function! PlaceStatusChecker()
+    norm Aif (status != CFE_SUCCESS) {return status;}
+endfunction!
+nnoremap  :call PlaceStatusChecker()<cr>
 
 " Create a c program from the c template file
 function! CreateC()

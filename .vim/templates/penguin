@@ -7,7 +7,7 @@
 # Author:     Brian Willis
 #
 # Created:    templatetime
-# Last Rev:   Mar 31, 2022
+# Last Rev:   Jun 24, 2022
 # By:         Brian Willis
 #
 # Copyright:  Capella Space Corporation
@@ -44,6 +44,8 @@ class PenguinTemplate(ps.PenguinScript):
         ''' Initialize the Script object
         Inputs:
             see penguin_script.PenguinScript
+        Assumptions:
+            comms is enabled
         '''
         parser = argparse.ArgumentParser(description = DESCRIPTION)
         parser.add_argument('--template',
