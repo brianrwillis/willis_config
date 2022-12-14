@@ -52,6 +52,7 @@ let ch_syntax_for_h=1           " Header filetype is 'ch'
 set background=dark
 let g:gruvbox_contrast_dark='hard'
 colorscheme gruvbox
+filetype detect
 
 " Dont highlight underscores on markdown files
 :hi link markdownError Normal

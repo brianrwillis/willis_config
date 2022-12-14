@@ -294,4 +294,10 @@ export EDITOR="vim"
 export TMOUT=0
 
 # Disable touchscreen
-xinput disable $(xinput --list | grep "Touchscreen" | awk '{print substr($5,4)}')
+server_type=$(loginctl show-session $(awk '/tty/ {print $1}' <(loginctl)) -p Type | awk -F= '{print $2}')
+if [ $server_type != "wayland" ]; then
+    xinput disable $(xinput --list | grep "Touchscreen" | awk '{print substr($5,4)}')
+fi
+
+# Github
+export GCM_CREDENTIAL_STORE="plaintext"
