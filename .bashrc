@@ -247,7 +247,7 @@ gccE() {
     if [[ ($# == 0) ]]; then
         echo "\$1: input file; \$2+ are args"
     else
-        gcc ${@:2} $1 $(find -type d | grep -v '\.git' | sed 's/^/-I/' | tr '\n\' ' ' 2>/dev/null)
+        gcc ${@:2} $1 $(find -type d | grep -v '\.git' | sed 's/^/-I/' | tr '\n\' ' ' 2>/dev/null) -I/opt/Microsemi_SoftConsole_v6.0/CMSIS/V4.5/Include
     fi
 }
 
@@ -292,15 +292,6 @@ export EDITOR="vim"
 # Dont close the bash shell after period of no activity
 # (WHY DOES THIS EXIST)
 export TMOUT=0
-
-# Disable touchscreen
-server_type=$(loginctl show-session $(awk '/tty/ {print $1}' <(loginctl)) -p Type | awk -F= '{print $2}')
-if [ $server_type != "wayland" ]; then
-    device=$(xinput --list | grep "Touchscreen" | awk '{print substr($5,4)}')
-    if [ ! -z "$device" ]; then
-        xinput disable $(xinput --list | grep "Touchscreen" | awk '{print substr($5,4)}')
-    fi
-fi
 
 # Github
 export GCM_CREDENTIAL_STORE="plaintext"

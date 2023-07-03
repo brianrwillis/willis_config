@@ -95,9 +95,9 @@ autocmd FileType qf nnoremap <buffer> <cr> <cr>:cclose<cr>zz
 autocmd FileType qf nnoremap <buffer>  <cr>zzj
 
 " Ctrl-L: quickfix implementation for the word under the cursor
-nnoremap  :grep! "\<<cword>\>" `find -type f \( -name "*.cpp" -o -name "*.c" -o -name "*.h" -o -name "*.py" \)`<cr>:copen<cr>
+nnoremap  :grep! "\<<cword>\>" `find -type f \( -name "*.c" -o -name "*.h" -o -name "*.py" \)`<cr>:copen<cr>
 " In visual mode, use the visually selected (use `"` reg)
-vnoremap  ""y:grep! "<C-R>=escape(@",'/\')<cr>" `find -type f \( -name "*.cpp" -o -name "*.c" -o -name "*.h" -o -name "*.py" \)`<cr>:copen<cr>
+vnoremap  ""y:grep! "<C-R>=escape(@",'/\')<cr>" `find -type f \( -name "*.c" -o -name "*.h" -o -name "*.py" \)`<cr>:copen<cr>
 
 " `//` and `??` in visual mode: search for visual selection (use `"` reg)
 vnoremap // ""y/\V<C-R>=escape(@",'/\')<cr><cr>
@@ -604,7 +604,7 @@ function! SwitchToRespectiveFile()
 
     function! OpenCppOrC(file)
         " If there's a main.cpp, assume this is a cpp project
-        if(filereadable(expand('%:h') . "/main.cpp"))
+        if(filereadable(glob(expand('%:h') . "/*.cpp")))
             exe "e " . a:file . ".cpp"
         else
             exe "e " . a:file . ".c"
@@ -740,9 +740,9 @@ function! AlignSlashes() range
     call winrestview(l:winview)
 endfunction!
 
-" Make status checker in c
+" Make status checker in c (CFE)
 function! PlaceStatusChecker()
-    norm Aif (status != 0) {return status;}
+    norm Aif (status != CFE_SUCCESS) {return status;}
 endfunction!
 nnoremap  :call PlaceStatusChecker()<cr>
 

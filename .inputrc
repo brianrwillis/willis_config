@@ -7,3 +7,6 @@ set editing-mode vi
 
 # No highlighting on paste
 set enable-bracketed-paste off
+
+# Color tab complete
+set colored-stats on
