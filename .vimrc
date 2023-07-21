@@ -19,34 +19,32 @@
 " Do math on numbers in file (e.g., floats mutliply by 2)
 " s/\(-*\d.*,\@<!\)/\=str2float(submatch(0))*2
 
-" This mess tells us if the current tmux pane is running vim. invoke with:
-" let is_vim = system(g:is_vim)[0]
-let g:is_vim = "tmux if-shell \"ps -o state= -o comm= -t #{pane_tty} | grep -iqE '^[^TXZ ]+ +(\\S+\\/)?g?(view|n?vim?x?)(diff)?$'\" \"run \\\"echo 1\\\"\" \"run \\\"echo 0\\\"\""
-
-set tabstop=4                   " Correct tabs
-set expandtab
-set shiftwidth=4
-
 set undofile                    " Nonvolatile undo
 set undodir=~/.vim/undodir
 
 set laststatus=2                " Always display statusline
 set wildmode=list:longest       " Tab-complete
 set smartindent                 " Indent... smart-ish
-set number                      " Number lines
 set mouse=a                     " New-school
 set clipboard=unnamedplus       " Combine system and vim clipboards
-set hidden                      " Fix windowing
-set timeoutlen=250              " Quarter second delays on hotkeys
-set ttimeoutlen=250
+set timeoutlen=175              " 175 ms delays on hotkeys
+set ttimeoutlen=175
 set cmdheight=2                 " Less 'Press enter to continue' on cmd line
 set backspace=indent,eol,start  " Fix backspacing after a newline
 set display=lastline            " Show partial word-wrapped lines
 set showtabline=2               " Always show tabs, even if only one file is open
-
 set nofixendofline              " Don't autoappend a newline when saving a file
+set number                      " Number lines
+set hidden                      " Fix windowing
+set expandtab                   " Insert spaces, not a tab, when tabbing
 
-let ch_syntax_for_h=1           " Header filetype is 'ch'
+" Set tab size for different filetypes
+" default
+set tabstop=4                   
+set shiftwidth=4
+augroup FileTypeSpecificAutocommands
+    autocmd FileType yaml setlocal tabstop=2 shiftwidth=2
+augroup END
 
 " Colors
 set background=dark
@@ -54,25 +52,8 @@ let g:gruvbox_contrast_dark='hard'
 colorscheme gruvbox
 filetype detect
 
-" Dont highlight underscores on markdown files
-:hi link markdownError Normal
-
-" Force transparent background first here
-" highlight Normal guibg=NONE ctermbg=NONE
-" highlight NonText guibg=NONE ctermbg=NONE
-
-" Force transparent background again on buf open
-" FIXME: figure out what in gruvbox is fucking with this
-" autocmd BufEnter * highlight Normal guibg=NONE ctermbg=NONE
-" autocmd BufEnter * highlight NonText guibg=NONE ctermbg=NONE
-
 " Set scroll (Ctrl-U/D)
-" FIXME: something is changing this randomly but :verbose only lists this line as
-"        affecting the setting, use CursorMoved to force on
 autocmd BufEnter,CursorMoved * let &scroll=min([15, winheight(0) / 3])
-
-" Set scroll offset to seventh of a page
-" autocmd BufEnter,CursorMoved * let &scrolloff=min([15, winheight(0) / 7])
 
 " Force the cursor to cmd mode on entering vim
 autocmd VimEnter * norm! 
@@ -86,18 +67,18 @@ autocmd VimEnter * syntax enable
 " Preserve clipboard on exit, requires xclip on system
 autocmd VimLeave * call system("xclip -selection clipboard -i", getreg('+'))
 
-" Auto-close the quickfix file created by `copen` after hitting enter 
+" Auto-close the quickfix file created by `copen` after hitting enter
 " (and set cursorline, center screen)
 autocmd FileType qf nnoremap <buffer> <cr> <cr>:cclose<cr>zz
 
-" Hitting Ctrl-L while in quickfix file will open file under cursor 
+" Hitting Ctrl-L while in quickfix file will open file under cursor
 " (and set cursorline, center screen)
 autocmd FileType qf nnoremap <buffer>  <cr>zzj
 
 " Ctrl-L: quickfix implementation for the word under the cursor
-nnoremap ^L :grep! "\<<cword>\>" `find -type f \( -name "*.cpp" -o -name "*.c" -o -name "*.h" -o -name "*.py" \)`<cr>:copen<cr>
+nnoremap  :grep! "\<<cword>\>" `find -type f \( -name "*.cpp" -o -name "*.c" -o -name "*.h" -o -name "*.hpp" -o -name "*.py" \)`<cr>:copen<cr>
 " In visual mode, use the visually selected (use `"` reg)
-vnoremap ^L ""y:grep! "<C-R>=escape(@",'/\')<cr>" `find -type f \( -name "*.cpp" -o -name "*.c" -o -name "*.h" -o -name "*.py" \)`<cr>:copen<cr>
+vnoremap  ""y:grep! "<C-R>=escape(@",'/\')<cr>" `find -type f \( -name "*.cpp" -o -name "*.c" -o -name "*.h" -o -name "*.hpp" -o -name "*.py" \)`<cr>:copen<cr>
 
 " `//` and `??` in visual mode: search for visual selection (use `"` reg)
 vnoremap // ""y/\V<C-R>=escape(@",'/\')<cr><cr>
@@ -224,13 +205,13 @@ function! SurroundWithChar()
     let c = nr2char(getchar())
 
     " Set surrounding chars
-    if(c == '(' || c == ')')
+    if (c == '(' || c == ')')
         let firstc = '('
         let lastc = ')'
-    elseif(c == '{' || c == '}')
+    elseif (c == '{' || c == '}')
         let firstc = '{'
         let lastc = '}'
-    elseif(c == '[' || c == ']')
+    elseif (c == '[' || c == ']')
         let firstc = '['
         let lastc = ']'
     else
@@ -263,17 +244,17 @@ function! OnSave()
     let l:winview = winsaveview()
     silent! norm mz
 
-    if(&modified)
+    if (&modified)
         " Keep the current search item
         let search = @/
 
         let current_date=strftime('%b %d, %Y')
         silent! 0,20g/Last Rev/exe "norm /RevWv$h\"zy"
-        if(current_date != getreg('z'))
+        if (current_date != getreg('z'))
             silent! 0,20g/Last Rev/exe "norm /RevW\"_d$a" . current_date
         endif
         silent! 0,20g/By\: /exe "norm /ByWv$h\"zy"
-        if(getreg('z')!="Brian Willis")
+        if (getreg('z')!="Brian Willis")
             silent! 0,20g/By\: /exe "norm /ByW\"_d$aBrian Willis"
         endif
 
@@ -319,17 +300,11 @@ endfunction!
 command! E :call ReloadAll()
 
 
-" Generate a tags file at the current directory. If a c program, includes the msp430 PAL
+" Generate a tags file at the current directory
 function! TagGen()
-    :filetype detect
     silent! :call system("rm tags")
 
-    if ((&ft == 'c') || (&ft == 'ch'))
-        " silent! !ctags --c-kinds=+p -R . /opt/capella-msp430/msp430-elf/include/msp430fr5964.h 2>/dev/null &
-        silent! !ctags -R . /opt/capella-msp430/msp430-elf/include/msp430fr5964.h 2>/dev/null &
-    else
-        silent! !ctags -R . 2>/dev/null &
-    endif
+    silent! !ctags -R . 2>/dev/null &
 
     " Clear the screen
     redraw!
@@ -362,12 +337,13 @@ endfunction!
 function! CommentHotkey(with_range) range
     let l:winview = winsaveview()
     silent! norm mz
+    let ft = expand('%:e')
     :filetype detect
 
-    " Get comment symbol per filetype
+    " Get comment symbol per filetype (use builtin &ft for extensionless vimrc)
     if (&ft == 'vim')
         let symbol = "\""
-    elseif((&ft == 'c') || (&ft == 'cpp') || (&ft == 'ch') || (&ft == 'rust'))
+    elseif ((ft == 'c') || (ft == 'cpp') || (ft == 'h') || (ft == 'rust'))
         let symbol = "\/\/"
     else
         let symbol = "#"
@@ -381,35 +357,33 @@ function! CommentHotkey(with_range) range
 
     let symbol_cnt = split(symbol_cnt, ' ')[0][1:]
 
-    if(symbol_cnt == 'Error')
+    if (symbol_cnt == 'Error')
         let symbol_cnt = 0
     endif
 
-    if(a:with_range == 1)
+    if (a:with_range == 1)
         " Get number of total lines in selection
         let line_cnt = a:lastline - a:firstline + 1
 
         " Add/remove comment symbols
-        if(symbol_cnt != line_cnt)
+        if (symbol_cnt != line_cnt)
             " Insert comment
             exe a:firstline . "," . a:lastline . "norm I" . symbol . " "
             let comment = 1
          else
             " Remove comments
             silent! exe a:firstline . "," . a:lastline . "s:" . symbol . " ::"
-            silent! exe a:firstline . "," . a:lastline . "s:^" . symbol . "::"
             let comment = 0
         endif
     else
         " Add/remove comment symbol
-        if(symbol_cnt == 0)
+        if (symbol_cnt == 0)
             " Insert comment
             exe a:firstline . "," . a:lastline . "norm I" . symbol . " "
             let comment = 1
         else
             " Remove comments
             silent! exe a:firstline . "," . a:lastline . "s:" . symbol . " ::"
-            silent! exe a:firstline . "," . a:lastline . "s:^" . symbol . "::"
             let comment = 0
         endif
      endif
@@ -474,21 +448,21 @@ inoremap <S-tab> <C-N>
 function! TabHotkey(with_range) range
     silent! norm mz
 
-    " Get number of spaces until a clean multiple of 4
-    if(a:with_range==1)
+    " Get number of spaces until a clean multiple of &tabstop
+    if (a:with_range==1)
         " Use the first line in selection to control the tab amount
-        let tab_amount = 4 - indent("'<") % 4
+        let tab_amount = &tabstop - indent("'<") % &tabstop
     else
-        let tab_amount = 4 - indent(".") % 4
+        let tab_amount = &tabstop - indent(".") % &tabstop
     endif
 
-    " If already aligned, tab over 4
-    if(tab_amount == 0)
-        let tab_amount = 4
+    " If already aligned, tab over &tabstop
+    if (tab_amount == 0)
+        let tab_amount = &tabstop
     endif
 
     " Tab
-    if(a:with_range==0)
+    if (a:with_range==0)
         silent! exe "norm ^" . tab_amount . "i "
     else
         silent! exe "'<,'>norm ^" . tab_amount . "i "
@@ -512,7 +486,7 @@ vnoremap <Tab> :call TabHotkey(1)<cr>:echo ""<cr>gv
 function! UnTabHotkey(with_range) range
     silent! norm mz
 
-    if(a:with_range==1)
+    if (a:with_range==1)
         " Use the first line in selection to control the tab amount
         let marker = "'<'"
     else
@@ -520,21 +494,21 @@ function! UnTabHotkey(with_range) range
     endif
 
     " If no indentation, just exit
-    if(indent(marker) == 0)
+    if (indent(marker) == 0)
         return 0
     endif
 
-    " Get number of spaces past a clean multiple of 4
-    let untab_amount = indent(marker) % 4
+    " Get number of spaces past a clean multiple of &tabstop
+    let untab_amount = indent(marker) % &tabstop
 
-    if(untab_amount == 0)
-        let untab_amount = 4
+    if (untab_amount == 0)
+        let untab_amount = &tabstop
     endif
 
     " Figure out how much to move the cursor
     let line_length = strwidth(getline('.'))
     let cursor_pos = col('.')
-    if(cursor_pos >= (line_length - untab_amount))
+    if (cursor_pos >= (line_length - untab_amount))
     let cursor_move_amount = line_length - cursor_pos
     else
         let cursor_move_amount = untab_amount
@@ -542,7 +516,7 @@ function! UnTabHotkey(with_range) range
 
     " Get current cursor position to know how far to move the cursor
     " Remove 'untab_amount' spaces
-    if(a:with_range==0)
+    if (a:with_range==0)
         silent! exe "s:^ \\{" . untab_amount . "\\}::"
     else
         silent! exe "'<,'>s:^ \\{" . untab_amount . "\\}::"
@@ -566,11 +540,11 @@ vnoremap [Z :call UnTabHotkey(1)<cr>:echo ""<cr>gv
 
 " Autoformat
 function! Autoformat()
-    filetype detect
+    let ft = expand('%:e')
     let l:winview = winsaveview()
     silent! norm mz
 
-    if (((&ft == 'ch') || (&ft == 'c') || (&ft == 'cpp')) && filereadable(".clang-format"))
+    if (((ft == 'ch') || (ft == 'c') || (ft == 'cpp') || (ft == 'hpp')) && filereadable(".clang-format"))
         " Use clang
         :%!clang-format
     else
@@ -578,7 +552,10 @@ function! Autoformat()
         let _s=@/
         :%s/\s\+$//e
         let @/=_s
-        retab
+        " Retab only if not a Makefile
+        if !((expand('%:t') == "Makefile") || (expand('%:p') == "mk"))
+            retab
+        endif
     endif
 
     silent! norm `z
@@ -599,23 +576,32 @@ endfunction!
 
 " Hotkey to go to respective .h/.c file, creates if non-existent
 function! SwitchToRespectiveFile()
-    :filetype detect
+    let ft = expand('%:e')
     let file = expand('%:f')
 
     function! OpenCppOrC(file)
-        " If there's a main.cpp, assume this is a cpp project
-        if(filereadable(glob(expand('%:h') . "/*.cpp")))
+        " If there's any *.cpp, assume this is a cpp project
+        if (len(glob(expand('%:h') . "/*.cpp")))
             exe "e " . a:file . ".cpp"
         else
             exe "e " . a:file . ".c"
         endif
     endfunction!
 
-    " If opened a file with no extension (didn't enter 'c' or 'h' after tabbing), open .c
+    function! OpenHppOrH(file)
+        " If there's any *.cpp, assume this is a cpp project
+        if (len(glob(expand('%:h') . "/*.cpp")))
+            exe "e " . a:file . ".hpp"
+        else
+            exe "e " . a:file . ".h"
+        endif
+    endfunction!
+
+    " If opened a file with no extension (didn't enter 'c' or 'h' after tabbing), open .c/.cpp
     " Unless this is a CHANGELOG
-    if (file[len(expand('%:f'))-1] == ".")
-        let file = file[0:len(file)-2]
-        if stridx("CHANGELOG", file) >= 0
+    if (file[len(expand('%:f')) - 1] == ".")
+        let file = file[0:len(file) - 2]
+        if (stridx("CHANGELOG", file) >= 0)
             exe "e " . file . "." . expand('%:p:h:t') . ".md"
         else
             :call OpenCppOrC(file)
@@ -623,14 +609,14 @@ function! SwitchToRespectiveFile()
         return
     endif
 
-    " Detect if header or c, then switch to respective
+    " Detect if header or source, then switch to respective file
     let file = expand('%:r')
-    if(&ft == 'ch')
+    if ((ft == 'h') || (ft == 'hpp'))
         :call OpenCppOrC(file)
-    elseif((&ft == 'c') || (&ft == 'cpp'))
-        exe "e " . file . ".h"
+    elseif ((ft == 'c') || (ft == 'cpp'))
+        :call OpenHppOrH(file)
     else
-        " Not a c, cpp, h, or file ending in '.', so do nothing
+        " Not a c, cpp, h, hpp, or file ending in '.', so do nothing
     endif
 endfunction!
 nnoremap  :call SwitchToRespectiveFile()<cr>
@@ -638,7 +624,7 @@ nnoremap  :call SwitchToRespectiveFile()<cr>
 
 " `gf` but look in more places
 " function! BetterGf()
-" 
+"
 " endfunction!
 " nnoremap gf :call BetterGf()<cr>
 
@@ -750,38 +736,4 @@ nnoremap  :call PlaceStatusChecker()<cr>
 function! CreateC()
     " Place contents of template file
     0r ~/.vim/templates/c
-endfunction!
-
-" Create a penguin script from the penguin template file
-function! CreatePenguin()
-    " Place contents of template file
-    0r ~/.vim/templates/penguin
-
-    let filename_plus_ext = expand('%:t')
-    let filename = expand('%:t:r')
-
-    " Insert current date
-    silent! exe "%s/templatetime/" . expand(strftime('%b %d, %Y')) . "/g"
-
-    " Insert file name with extension
-    silent! exe "%s/penguin_template.py/" . filename_plus_ext . "/g"
-
-    " Insert file name without extension
-    silent! exe "%s/PenguinTemplate/" . filename . "/g"
-
-    " Find instances of file name that are *not* functions and convert to proper caps
-    " Would use 'g' command but regex matching will match lines instead of the match
-    " Itself when used in a function for some raisin (there are only 3 to replace)
-    silent! exe "/" . filename . "\\(\\.\\)\\@!"
-    norm wveU
-    :call ConvertCaps()
-    silent! exe "/" . filename . "\\(\\.\\)\\@!"
-    norm wwveU
-    :call ConvertCaps()
-    silent! exe "/" . filename . "\\(\\.\\)\\@!"
-    norm wveU
-    :call ConvertCaps()
-
-    " Move to first 'todo' string
-    silent! norm /TODOzz
 endfunction!

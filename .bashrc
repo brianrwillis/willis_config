@@ -140,7 +140,10 @@ alias akc="ack"
 alias SO="source ~/.bashrc && source ~/.bash_aliases && source ~/.profile"
 alias So="SO"
 
+alias cake="make clean ; make"
+
 # Open all git conflicts
+# FIXME
 con() {
     all_files=$(git ls-files -u | cut -f 2 | sort -u)
     non_directories=()
@@ -174,7 +177,7 @@ make() {
          /____\\
     "
     else
-        command make "$@"
+        command make "$@" | tee
     fi
 }
 
@@ -298,9 +301,12 @@ export GCM_CREDENTIAL_STORE="plaintext"
 
 # Disable touchscreen
 server_type=$(loginctl show-session $(awk '/tty/ {print $1}' <(loginctl)) -p Type | awk -F= '{print $2}')
-if [ $server_type != "wayland" ]; then
+if [[ $server_type == "xorg" ]]; then
     device=$(xinput --list | grep "Touchscreen" | awk '{print substr($5,4)}')
     if [ ! -z "$device" ]; then
         xinput disable $(xinput --list | grep "Touchscreen" | awk '{print substr($5,4)}')
     fi
 fi
+
+# Consistent character interpretation
+stty sane
