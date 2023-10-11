@@ -137,22 +137,30 @@ alias ov="vim"
 alias :q="echo idiot"
 
 alias akc="ack"
-alias SO="source ~/.bashrc && source ~/.bash_aliases && source ~/.profile"
+alias SO="source ~/.bashrc ; source ~/.bash_aliases ; source ~/.profile"
 alias So="SO"
 
 alias cake="make clean ; make"
 
+# Init submodules, reset all changes, update submodules
+alias sub="git submodule init ; git submodule foreach --recursive git reset --hard ; git submodule update --init --recursive"
+
 # Open all git conflicts
 # FIXME
 con() {
+    # Get list of conflicts
     all_files=$(git ls-files -u | cut -f 2 | sort -u)
+
+    # Filter out directories
     non_directories=()
     for x in $all_files; do
         [ -d "$x" ] || non_directories+=("$x")
     done
-    echo $all_files
-    echo $non_directories
-    command vi -p ${non_directories[@]}
+
+    # Make sure length is > 0
+    if [ ${#non_directories[@]} -ne 0 ]; then
+        command vim -p ${non_directories[@]}
+    fi
 }
 
 # Stop that
@@ -182,8 +190,27 @@ make() {
 }
 
 git() {
+    # Pretty tags list
     if [[ ($@ == "tag") ]]; then
         command git tag --sort=-creatordate
+
+    # Check out a branch, and where possible, check out submodules' branches of the same name. 
+    # Trigger when last arg is "all"
+    elif [[ (${@: -1} == "all") ]]; then
+        if [[ ($# != 3) ]]; then
+            echo "Usage: git checkout branch_name all"
+        else
+            # Parent repo
+            command git checkout $2
+
+            # For submodules, first checkout the hashes tracked as by the parent repo
+            command git submodule update
+
+            # Now check out the branch names - if the branch doesn't exist, do not complain
+            command git submodule foreach "git checkout $2 || true" 2>/dev/null
+        fi
+
+    # Standard git command
     else
         command git "$@"
     fi
@@ -211,6 +238,7 @@ dec() {
 
 # find -name "*<thing>*" is too much to fuckin type god damn it
 # Only includes source files!
+# FIXME: rething exclusions. Unintuitive design.
 fin () {
     local suds=""
 
@@ -246,6 +274,8 @@ fin () {
 }
 
 # do a gcc but also `-I` every single dir in the PWD
+# FIXME: this is super dumb. There must be a better way.
+# also the naming is ambiguous. This isn't a 'gcc -E' anymore, it's gcc plus whatever shit
 gccE() {
     if [[ ($# == 0) ]]; then
         echo "\$1: input file; \$2+ are args"
@@ -262,6 +292,8 @@ print-swap() {
 }
 
 # Pipe shit to the clipboard
+# FIXME: this is a super dumb implementation. Should just copy the previous stdout or something, 
+# rather than re-running the command.
 c() {
     if [[ ($# == 0) ]]; then
         echo "Usage: c <command>"

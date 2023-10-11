@@ -10,14 +10,23 @@
 
 "TODO: increase paths, no path=**
 
+" set path+=**
+" function! GfInNewTab()
+    " norm :tabnew %<cr>
+    " norm 
+    " norm gf
+" endfunction!
+" nnoremap gF :call GfInNewTab()<cr>
 
-" Useful commands
+
+" ### Useful commands ###
 " Loop through lines and do an operation based off conditional (e.g., pad lines up to a float ratio)
 " let g:i = 0
 " let g:i = g:i + 1 | let diff = 1163.0/445.0 | if (g:i < diff) | exe "norm yyp" | else | exe "norm j" | let g:i = g:i - diff | endif
 
 " Do math on numbers in file (e.g., floats mutliply by 2)
 " s/\(-*\d.*,\@<!\)/\=str2float(submatch(0))*2
+" #######################
 
 set undofile                    " Nonvolatile undo
 set undodir=~/.vim/undodir
@@ -76,9 +85,13 @@ autocmd FileType qf nnoremap <buffer> <cr> <cr>:cclose<cr>zz
 autocmd FileType qf nnoremap <buffer>  <cr>zzj
 
 " Ctrl-L: quickfix implementation for the word under the cursor
-nnoremap  :grep! "\<<cword>\>" `find -type f \( -name "*.cpp" -o -name "*.c" -o -name "*.h" -o -name "*.hpp" -o -name "*.py" \)`<cr>:copen<cr>
+" FIXME: can't get spaces in names to work.  -printf '"\%p" ' after `find` is insufficient
+" FIXME: also this muddies stdout (after exiting vim)
+" Highlight first with `*`
+nnoremap  *:grep! "\<<cword>\>" `find -type f \( -name "*.cpp" -o -name "*.c" -o -name "*.h" -o -name "*.hpp" -o -name "*.py" -o -name "*.cs" \)`<cr>:copen 15<cr>
 " In visual mode, use the visually selected (use `"` reg)
-vnoremap  ""y:grep! "<C-R>=escape(@",'/\')<cr>" `find -type f \( -name "*.cpp" -o -name "*.c" -o -name "*.h" -o -name "*.hpp" -o -name "*.py" \)`<cr>:copen<cr>
+" Highlight first with searching for `"` register contents
+vnoremap  ""y/\V<C-R>=escape(@",'/\')<cr><cr>:grep! "<C-R>=escape(@",'/\')<cr>" `find -type f \( -name "*.cpp" -o -name "*.c" -o -name "*.h" -o -name "*.hpp" -o -name "*.py" -o -name "*.cs" \)`<cr>:copen 15<cr>
 
 " `//` and `??` in visual mode: search for visual selection (use `"` reg)
 vnoremap // ""y/\V<C-R>=escape(@",'/\')<cr><cr>
@@ -140,7 +153,8 @@ vnoremap C "_c
 nnoremap CC "_cc
 
 " cc = change to first char
-nnoremap cc $v^"_c
+" FIXME: dont like this
+" nnoremap cc $v^"_c
 
 " Disable command history
 " FIXME: why does this work intermittently?
@@ -164,17 +178,45 @@ nnoremap  zz
 
 " Ctrl-\ = open this tag in a new tab
 function! CtagJumpNewTab()
+    " Get our current position and current file
+    let pos = getpos('.')
     let file = expand('%')
-    exe ":tabnew " . file
-    norm 
-    let new_file = expand('%')
 
-    if new_file == file
-        " There was no match
+    " Open a new tab
+    exe ":tabnew " . file
+
+    " Move to our old position, then execute the ctag jump
+    call setpos('.', pos)
+    norm 
+
+    let new_file = expand('%')
+    let new_pos = getpos('.')
+
+    if ((new_file == file) && (new_pos[1] == pos[1]))
+        " We're in the same file at the same row: no jump, close this file
         :q!
     endif
 endfunction!
 nnoremap  :call CtagJumpNewTab()<cr>zz
+
+
+" Ctrl-B = duplicate this buffer in a new tab
+function! DupeBufferNewTab()
+    " Get our current position, current file, and current window position
+    let pos = getpos('.')
+    let file = expand('%')
+    let l:winview = winsaveview()
+
+    " Open a new tab
+    exe ":tabnew " . file
+
+    " Move to our old position
+    call winrestview(l:winview)
+    call setpos('.', pos)
+
+    echom "Duplicated Buffer"
+endfunction!
+nnoremap  :call DupeBufferNewTab()<cr>
 
 
 " Previous in jump list (remap Ctrl-I)
@@ -343,7 +385,7 @@ function! CommentHotkey(with_range) range
     " Get comment symbol per filetype (use builtin &ft for extensionless vimrc)
     if (&ft == 'vim')
         let symbol = "\""
-    elseif ((ft == 'c') || (ft == 'cpp') || (ft == 'h') || (ft == 'rust'))
+    elseif ((ft == 'c') || (ft == 'cpp') || (ft == 'h') || (ft == 'hpp') || (ft == 'rust') || (ft == 'ld') || (ft == 'cs'))
         let symbol = "\/\/"
     else
         let symbol = "#"
@@ -541,12 +583,13 @@ vnoremap [Z :call UnTabHotkey(1)<cr>:echo ""<cr>gv
 " Autoformat
 function! Autoformat()
     let ft = expand('%:e')
+    let pos = getpos('.')
     let l:winview = winsaveview()
-    silent! norm mz
 
-    if (((ft == 'ch') || (ft == 'c') || (ft == 'cpp') || (ft == 'hpp')) && filereadable(".clang-format"))
-        " Use clang
+    if (((ft == 'h') || (ft == 'c') || (ft == 'cpp') || (ft == 'hpp')) && filereadable(".clang-format"))
+        " Use clang-format
         :%!clang-format
+        echom "Applied clang-format"
     else
         " Find and remove all whitespace on empty lines
         let _s=@/
@@ -558,10 +601,18 @@ function! Autoformat()
         endif
     endif
 
-    silent! norm `z
+    " Move to our old position
     call winrestview(l:winview)
+    call setpos('.', pos)
 endfunction!
 nnoremap <F5> :call Autoformat()<cr>
+
+
+" Workaround for WSL: quick substitute away all s
+function! FixWindowsEOL()
+    :%s/$//g
+endfunction!
+nnoremap <F6> :call FixWindowsEOL()<cr>
 
 
 " Insert include guard on header file

@@ -7,4 +7,4 @@ cp -r ~/.vim/colors .vim
 cp -r ~/.vim/templates .vim
 
 # Terminal profile
-dconf dump /org/gnome/terminal/legacy/profiles:/ > gnome_profile.dconf
+# dconf dump /org/gnome/terminal/legacy/profiles:/ > gnome_profile.dconf
