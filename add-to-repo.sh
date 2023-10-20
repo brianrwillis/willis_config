@@ -1,3 +1,15 @@
+# Double check :)
+read -p "Overwrite config files in repo with what exists locally? [Y/n]" -n 1 -r -s
+echo ""
+
+if ! [[ ($REPLY =~ ^[Yy]$) || (-z $REPLY) ]]; then
+    # GTFO
+    echo "Aborting!"
+    exit 1
+fi
+
+echo "Updating..."
+
 # Confs
 cp ~/.ackrc ~/.bashrc ~/.inputrc ~/.tmux.conf ~/.profile ~/.vimrc .
 
