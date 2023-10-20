@@ -11,6 +11,8 @@
 
 --ignore-file=ext:o
 --ignore-file=ext:so
+--ignore-file=ext:a
+
 --ignore-file=ext:run
 --ignore-file=ext:png
 --ignore-file=ext:svg
@@ -21,7 +23,3 @@
 --ignore-file=ext:hex
 --ignore-file=ext:axf
 --ignore-file=ext:bin
---ignore-file=ext:uvprojx
---ignore-file=ext:sln
---ignore-file=ext:csproj
---ignore-file=ext:vcxproj

@@ -76,8 +76,8 @@ esac
 if [ -x /usr/bin/dircolors ]; then
     test -r ~/.dircolors && eval "$(dircolors -b ~/.dircolors)" || eval "$(dircolors -b)"
     alias ls='ls --color=auto'
-    #alias dir='dir --color=auto'
-    #alias vdir='vdir --color=auto'
+    alias dir='dir --color=auto'
+    alias vdir='vdir --color=auto'
 
     alias grep='grep --color=auto'
     alias fgrep='fgrep --color=auto'
@@ -96,15 +96,6 @@ alias l='ls -CF'
 #   sleep 10; alert
 alias alert='notify-send --urgency=low -i "$([ $? = 0 ] && echo terminal || echo error)" "$(history|tail -n1|sed -e '\''s/^\s*[0-9]\+\s*//;s/[;&|]\s*alert$//'\'')"'
 
-# Alias definitions.
-# You may want to put all your additions into a separate file like
-# ~/.bash_aliases, instead of adding them here directly.
-# See /usr/share/doc/bash-doc/examples in the bash-doc package.
-
-if [ -f ~/.bash_aliases ]; then
-    . ~/.bash_aliases
-fi
-
 # enable programmable completion features (you don't need to enable
 # this, if it's already enabled in /etc/bash.bashrc and /etc/profile
 # sources /etc/bash.bashrc).
@@ -116,7 +107,16 @@ if ! shopt -oq posix; then
   fi
 fi
 
+
+############################# Start of Brian stuff ############################
+
+# Machine-dependent, untracked aliases (and related)
+if [ -f ~/.bash_aliases ]; then
+    . ~/.bash_aliases
+fi
+
 # Stubbornly use vim everywhere
+export EDITOR="vim"
 set -o vi
 
 # But I still like these
@@ -142,11 +142,11 @@ alias So="SO"
 
 alias cake="make clean ; make"
 
-# Init submodules, reset all changes, update submodules
-alias sub="git submodule init ; git submodule foreach --recursive git reset --hard ; git submodule update --init --recursive"
+# Init submodules, *reset all changes*, update submodules
+alias sub="git submodule init ; git submodule foreach --recursive git reset --hard ; git submodule update --recursive"
 
 # Open all git conflicts
-# FIXME
+# FIXME check this is working with submodules
 con() {
     # Get list of conflicts
     all_files=$(git ls-files -u | cut -f 2 | sort -u)
@@ -159,6 +159,7 @@ con() {
 
     # Make sure length is > 0
     if [ ${#non_directories[@]} -ne 0 ]; then
+        # Open all up in a separate vim tab
         command vim -p ${non_directories[@]}
     fi
 }
@@ -172,6 +173,7 @@ ack() {
     fi
 }
 
+# Urn!
 make() {
     if [[ ($@ == "urn") ]]; then
         command echo "\
@@ -189,16 +191,17 @@ make() {
     fi
 }
 
+# Git overrrides
 git() {
     # Pretty tags list
     if [[ ($@ == "tag") ]]; then
         command git tag --sort=-creatordate
 
     # Check out a branch, and where possible, check out submodules' branches of the same name. 
-    # Trigger when last arg is "all"
+    # Trigger when last arg is "all" - hopes no branches are named "all"
     elif [[ (${@: -1} == "all") ]]; then
         if [[ ($# != 3) ]]; then
-            echo "Usage: git checkout branch_name all"
+            echo "Usage: git checkout BRANCH_NAME all"
         else
             # Parent repo
             command git checkout $2
@@ -207,18 +210,20 @@ git() {
             command git submodule update
 
             # Now check out the branch names - if the branch doesn't exist, do not complain
+            # FIXME: git fetch for remote branches?
             command git submodule foreach "git checkout $2 || true" 2>/dev/null
         fi
 
-    # Standard git command
+    # Unmolested git command
     else
         command git "$@"
     fi
 }
 
+# Do a little dec -> hex conversion
 hex() {
     if [[ ($# == 0) ]]; then
-        echo "Usage: hex number [lower]"
+        echo "Usage: hex NUMBER [lower]"
     else
         if [[ ($2 == "lower") ]]; then
             python3 -c "print('0x%x' % $1)"
@@ -228,9 +233,10 @@ hex() {
     fi
 }
 
+# Do a little hex -> dec conversion
 dec() {
     if [[ ($# == 0) ]]; then
-        echo "Usage: dec [0x]number"
+        echo "Usage: dec [0x]NUMBER"
     else
         python3 -c "print('%d' % (int('$1', 0) if '0x' in '$1' else int('0x' + '$1', 0)))"
     fi
@@ -238,22 +244,22 @@ dec() {
 
 # find -name "*<thing>*" is too much to fuckin type god damn it
 # Only includes source files!
-# FIXME: rething exclusions. Unintuitive design.
+# FIXME: rething exclusions. Unintuitive design. Major usecase is source files only
 fin () {
-    local suds=""
+    suds=""
 
     if [[ ($# == 0) ]]; then
         echo "Usage: fin [dir] term"
     else
         if [[ ($# == 1) ]]; then
-            local path=.
-            local search=$1
+            path=.
+            search=$1
         elif [[ ($# == 2) ]]; then
-            local path=$1
-            local search=$2
+            path=$1
+            search=$2
 
             if [[ ($1 == "/") ]]; then
-                local suds="sudo"
+                suds="sudo"
             fi
         fi
 
@@ -273,14 +279,14 @@ fin () {
     fi
 }
 
-# do a gcc but also `-I` every single dir in the PWD
-# FIXME: this is super dumb. There must be a better way.
-# also the naming is ambiguous. This isn't a 'gcc -E' anymore, it's gcc plus whatever shit
-gccE() {
+# Do a gcc command but also `-I` every single dir in the PWD
+# FIXME: this is super dumb
+gcc-big-include() {
     if [[ ($# == 0) ]]; then
-        echo "\$1: input file; \$2+ are args"
+        echo "Usage: gcc-big-include FILE [extraneous args]"
     else
-        gcc ${@:2} $1 $(find -type d | grep -v '\.git' | sed 's/^/-I/' | tr '\n\' ' ' 2>/dev/null)
+        all_includes=$(find -type d | grep -v '\.git' | sed 's/^/-I/' | tr '\n\' ' ' 2>/dev/null)
+        gcc ${@:2} $1 $all_includes
     fi
 }
 
@@ -288,18 +294,7 @@ gccE() {
 print-swap() {
     for file in /proc/*/status ; do
         awk '/VmSwap|Name/{printf $2 " " $3}END{ print ""}' $file
-    done | sort -k 2 -n -r | less
-}
-
-# Pipe shit to the clipboard
-# FIXME: this is a super dumb implementation. Should just copy the previous stdout or something, 
-# rather than re-running the command.
-c() {
-    if [[ ($# == 0) ]]; then
-        echo "Usage: c <command>"
-    else
-       "$@" 2>&1 | tee >(xclip -i -selection clipboard)
-    fi
+    done | sort -k 2 -n
 }
 
 
@@ -307,13 +302,17 @@ c() {
 HISTSIZE=100000
 HISTFILESIZE=100000
 
+
 # Share bash history across all terminals:
 # Avoid duplicates
 HISTCONTROL=ignoredups:erasedups
+
 # When the shell exits, append to the history file instead of overwriting it
 shopt -s histappend
+
 # After each command, append to the history file and reread it
 PROMPT_COMMAND="${PROMPT_COMMAND:+$PROMPT_COMMAND$'\n'}history -a; history -c; history -r"
+
 
 # Prevent Qt session management errors
 unset SESSION_MANAGER
@@ -321,15 +320,9 @@ unset SESSION_MANAGER
 # Remove Ctrl-S freeze
 stty -ixon
 
-# Default editor
-export EDITOR="vim"
-
 # Dont close the bash shell after period of no activity
 # (WHY DOES THIS EXIST)
 export TMOUT=0
-
-# Github
-export GCM_CREDENTIAL_STORE="plaintext"
 
 # Disable touchscreen
 server_type=$(loginctl show-session $(awk '/tty/ {print $1}' <(loginctl)) -p Type | awk -F= '{print $2}')
