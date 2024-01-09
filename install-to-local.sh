@@ -11,13 +11,17 @@ fi
 echo "Updating..."
 
 # Vim dirs
+cp .vimrc ~
 mkdir ~/.vim         2>/dev/null
 mkdir ~/.vim/after   2>/dev/null
 mkdir ~/.vim/colors  2>/dev/null
 mkdir ~/.vim/undodir 2>/dev/null
 
+# Nvim
+cp -r --parents plugin after lua templates init.lua ~/.config/nvim
+
 # Copy to home dir
-cp -r --parents .bashrc .profile .ackrc .inputrc .tmux.conf .vimrc .vim ~
+cp -r --parents .bashrc .profile .ackrc .inputrc .tmux.conf .vim ~
 
 # Terminal profile, if gnome-terminal exists
 if test -f /usr/bin/gnome-terminal; then

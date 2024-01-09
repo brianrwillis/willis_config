@@ -11,12 +11,20 @@ fi
 echo "Updating..."
 
 # Confs
-cp ~/.ackrc ~/.bashrc ~/.inputrc ~/.tmux.conf ~/.profile ~/.vimrc .
+cp ~/.ackrc ~/.bashrc ~/.inputrc ~/.tmux.conf ~/.profile .
 
 # Vim stuff
-cp -r ~/.vim/after .vim/
-cp -r ~/.vim/colors .vim
-cp -r ~/.vim/templates .vim
+cp -r ~/.vimrc . 2>/dev/null
+cp -r ~/.vim/after .vim/ 2>/dev/null
+cp -r ~/.vim/colors .vim 2>/dev/null
+cp -r ~/.vim/templates .vim 2>/dev/null
+
+# Nvim
+cp -r ~/.config/nvim/init.lua . 2>/dev/null
+cp -r ~/.config/nvim/after . 2>/dev/null
+cp -r ~/.config/nvim/lua . 2>/dev/null
+cp -r ~/.config/nvim/plugin . 2>/dev/null
+cp -r ~/.config/nvim/templates . 2>/dev/null
 
 # Terminal profile, if gnome-terminal exists
 if test -f /usr/bin/gnome-terminal; then

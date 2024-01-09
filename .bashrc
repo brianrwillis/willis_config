@@ -116,7 +116,7 @@ if [ -f ~/.bash_aliases ]; then
 fi
 
 # Stubbornly use vim everywhere
-export EDITOR="vim"
+export EDITOR="nvim"
 set -o vi
 
 # But I still like these
@@ -129,21 +129,28 @@ bind -m vi-insert "\C-e.":end-of-line
 alias py="python3"
 alias go="xdg-open"
 
-alias vi="vim"
-alias iv="vim"
-alias vo="vim"
-alias ov="vim"
+alias vi="nvim"
+alias iv="nvim"
+alias vo="nvim"
+alias ov="nvim"
 
 alias :q="echo idiot"
 
 alias akc="ack"
-alias SO="source ~/.bashrc ; source ~/.bash_aliases ; source ~/.profile"
-alias So="SO"
+alias acj="akc"
+alias avk="akc"
+alias avj="akc"
+alias avl="akc"
+
+alias S="source ~/.bashrc ; source ~/.bash_aliases ; source ~/.profile"
 
 alias cake="make clean ; make"
 
 # Init submodules, *reset all changes*, update submodules
 alias sub="git submodule init ; git submodule foreach --recursive git reset --hard ; git submodule update --recursive"
+
+alias gitpush="git push"
+alias gitpull="git pull"
 
 # Open all git conflicts
 # FIXME check this is working with submodules
@@ -160,7 +167,7 @@ con() {
     # Make sure length is > 0
     if [ ${#non_directories[@]} -ne 0 ]; then
         # Open all up in a separate vim tab
-        command vim -p ${non_directories[@]}
+        command $EDITOR -p ${non_directories[@]}
     fi
 }
 
@@ -243,8 +250,7 @@ dec() {
 }
 
 # find -name "*<thing>*" is too much to fuckin type god damn it
-# Only includes source files!
-# FIXME: rething exclusions. Unintuitive design. Major usecase is source files only
+# FIXME: find a nice way to add variable number of options at the end
 fin () {
     suds=""
 
@@ -252,10 +258,10 @@ fin () {
         echo "Usage: fin [dir] term"
     else
         if [[ ($# == 1) ]]; then
-            path=.
+            dir=.
             search=$1
         elif [[ ($# == 2) ]]; then
-            path=$1
+            dir=$1
             search=$2
 
             if [[ ($1 == "/") ]]; then
@@ -263,19 +269,20 @@ fin () {
             fi
         fi
 
-        command $suds find "$path" -name "*$search*" -type f ! -path "*/\.git/*"   \
-                                                             ! -path "/*undodir/*" \
-                                                             ! -path "*/outputs/*" \
-                                                             ! -path "*\.so"       \
-                                                             ! -path "*\.o"        \
-                                                             ! -path "*\.omc"      \
-                                                             ! -path "*\.a"        \
-                                                             ! -path "*\.elf"      \
-                                                             ! -path "*/outputs/*" \
-                                                             ! -name "*\.swp"      \
-                                                             ! -name "*\.swo"      \
-                                                             ! -name "*\.swm"      \
-                                                             ! -name "*\.swn"
+        command $suds find "$dir" -name "*$search*" 
+                                                     # -type f ! -path "*/\.git/*"   \
+                                                     #         ! -path "/*undodir/*" \
+                                                     #         ! -path "*/outputs/*" \
+                                                     #         ! -path "*\.so"       \
+                                                     #         ! -path "*\.o"        \
+                                                     #         ! -path "*\.omc"      \
+                                                     #         ! -path "*\.a"        \
+                                                     #         ! -path "*\.elf"      \
+                                                     #         ! -path "*/outputs/*" \
+                                                     #         ! -name "*\.swp"      \
+                                                     #         ! -name "*\.swo"      \
+                                                     #         ! -name "*\.swm"      \
+                                                     #         ! -name "*\.swn"
     fi
 }
 
@@ -297,14 +304,12 @@ print-swap() {
     done | sort -k 2 -n
 }
 
-
 # If we don't study the commands of the past, we're doomed to retype them
 HISTSIZE=100000
 HISTFILESIZE=100000
 
 
-# Share bash history across all terminals:
-# Avoid duplicates
+# Share bash history across all terminals, avoiding duplicates
 HISTCONTROL=ignoredups:erasedups
 
 # When the shell exits, append to the history file instead of overwriting it
