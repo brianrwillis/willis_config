@@ -1,8 +1,24 @@
--- This file can be loaded by calling `lua require('plugins')` from your init.vim
+-- Ensure PackerSync is installed
+local ensure_packer = function()
+    local fn = vim.fn
+    local install_path = fn.stdpath('data')..'/site/pack/packer/start/packer.nvim'
+    if fn.empty(fn.glob(install_path)) > 0 then
+        fn.system({'git', 'clone', '--depth', '1', 'https://github.com/wbthomason/packer.nvim',
+                   install_path})
+        vim.cmd [[packadd packer.nvim]]
+        return true
+    end
+    return false
+end
+
+local packer_bootstrap = ensure_packer()
+
 
 -- Only required if you have packer configured as `opt`
 vim.cmd [[packadd packer.nvim]]
 
+
+-- Plugin configuration
 return require('packer').startup(function(use)
     -- Packer can manage itself
     use "wbthomason/packer.nvim"
@@ -23,29 +39,31 @@ return require('packer').startup(function(use)
     -- Treesitter coloring
     use {
         "nvim-treesitter/nvim-treesitter",
-        require('nvim-treesitter.configs').setup {
-            -- A list of parser names, or "all" (the five listed parsers should always be installed)
-            ensure_installed = { "c", "lua", "vim", "vimdoc", "query",
-                                 "python", "gitignore", "make", "cpp", "diff", "json", "markdown" },
+        config = function()
+            require('nvim-treesitter.configs').setup {
+                -- A list of parser names, or "all" (the five listed parsers should always be installed)
+                ensure_installed = { "c", "lua", "vim", "vimdoc", "query",
+                                    "python", "gitignore", "make", "cpp", "diff", "json", "markdown" },
 
-            -- Install parsers synchronously (only applied to `ensure_installed`)
-            sync_install = false,
+                -- Install parsers synchronously (only applied to `ensure_installed`)
+                sync_install = false,
 
-            -- Automatically install missing parsers when entering buffer
-            -- Recommendation: set to false if you don't have `tree-sitter` CLI installed locally
-            auto_install = true,
+                -- Automatically install missing parsers when entering buffer
+                -- Recommendation: set to false if you don't have `tree-sitter` CLI installed locally
+                auto_install = true,
 
-            highlight = {
-                enable = true,
+                highlight = {
+                    enable = true,
 
-                -- Setting this to true will run `:h syntax` and tree-sitter at the same time.
-                -- Set this to `true` if you depend on 'syntax' being enabled (like for indentation).
-                -- Using this option may slow down your editor, and you may see some duplicate highlights.
-                -- Instead of true it can also be a list of languages
-                additional_vim_regex_highlighting = false,
-           },
-        },
-        run = ':TSUpdate'
+                    -- Setting this to true will run `:h syntax` and tree-sitter at the same time.
+                    -- Set this to `true` if you depend on 'syntax' being enabled (like for indentation).
+                    -- Using this option may slow down your editor, and you may see some duplicate highlights.
+                    -- Instead of true it can also be a list of languages
+                    additional_vim_regex_highlighting = false,
+                },
+            }
+        end,
+        run = ':TSUpdate',
     }
 
     -- Autocomplete
@@ -69,40 +87,44 @@ return require('packer').startup(function(use)
     -- Comments
     use {
         "terrortylor/nvim-comment",
-        require('nvim_comment').setup {
-            create_mappings = false
-        }
+        config = function()
+            require('nvim_comment').setup {
+                create_mappings = false
+            }
+        end
     }
 
     -- Surround
     use {
         "echasnovski/mini.surround",
-        require('mini.surround').setup {
-            -- Duration (in ms) of highlight when calling `MiniSurround.highlight()`
-            highlight_duration = 500,
+        config = function()
+            require('mini.surround').setup {
+                -- Duration (in ms) of highlight when calling `MiniSurround.highlight()`
+                highlight_duration = 500,
 
-            -- Module mappings. Use `''` (empty string) to disable one.
-            mappings = {
-                add = 'sa',            -- Add surrounding in Normal and Visual modes
-                delete = 'sd',         -- Delete surrounding
-                find = 'sf',           -- Find surrounding (to the right)
-                find_left = 'sF',      -- Find surrounding (to the left)
-                highlight = 'sh',      -- Highlight surrounding
-                replace = 'sr',        -- Replace surrounding
-                update_n_lines = 'sn', -- Update `n_lines`
+                -- Module mappings. Use `''` (empty string) to disable one.
+                mappings = {
+                    add = 'sa',            -- Add surrounding in Normal and Visual modes
+                    delete = 'sd',         -- Delete surrounding
+                    find = 'sf',           -- Find surrounding (to the right)
+                    find_left = 'sF',      -- Find surrounding (to the left)
+                    highlight = 'sh',      -- Highlight surrounding
+                    replace = 'sr',        -- Replace surrounding
+                    update_n_lines = 'sn', -- Update `n_lines`
 
-                suffix_last = 'l', -- Suffix to search with "prev" method
-                suffix_next = 'n', -- Suffix to search with "next" method
-          },
+                    suffix_last = 'l', -- Suffix to search with "prev" method
+                    suffix_next = 'n', -- Suffix to search with "next" method
+            },
 
-          -- Whether to respect selection type:
-          -- - Place surroundings on separate lines in linewise mode.
-          -- - Place surroundings on each line in blockwise mode.
-          respect_selection_type = true,
+            -- Whether to respect selection type:
+            -- - Place surroundings on separate lines in linewise mode.
+            -- - Place surroundings on each line in blockwise mode.
+            respect_selection_type = true,
 
-          -- Number of lines within which surrounding is searched
-          n_lines = 40
-        }
+            -- Number of lines within which surrounding is searched
+            n_lines = 40
+            }
+        end
     }
 
     -- Create sessions files for tmux-resurrect
