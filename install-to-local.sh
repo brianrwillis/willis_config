@@ -18,13 +18,14 @@ mkdir ~/.vim/colors  2>/dev/null
 mkdir ~/.vim/undodir 2>/dev/null
 
 # Nvim
+mkdir ~/.config/nvim 2>/dev/null
 cp -r --parents plugin after lua templates init.lua ~/.config/nvim
 
 # Copy to home dir
 cp -r --parents .bashrc .profile .ackrc .inputrc .tmux.conf .vim ~
 
 # Terminal profile, if gnome-terminal exists
-if test -f /usr/bin/gnome-terminal; then
+if [ -f /usr/bin/gnome-terminal ] ; then
     dconf load /org/gnome/terminal/legacy/profiles:/ < gnome_profile.dconf
 fi
 

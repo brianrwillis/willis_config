@@ -115,7 +115,7 @@ if [ -f ~/.bash_aliases ]; then
     . ~/.bash_aliases
 fi
 
-# Stubbornly use vim everywhere
+# Stubbornly use nvim everywhere
 export EDITOR="nvim"
 set -o vi
 

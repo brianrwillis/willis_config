@@ -62,7 +62,7 @@ vim.opt.completeopt:remove("preview")
 
 
 ---------------- Remaps ----------------
--- Set space as <leader>
+-- Allow space to be <leader>
 vim.keymap.set({"n", "v"}, " ", "<Nop>")
 
 -- Center on jumps
