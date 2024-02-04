@@ -43,7 +43,8 @@ return require('packer').startup(function(use)
             require('nvim-treesitter.configs').setup {
                 -- A list of parser names, or "all" (the five listed parsers should always be installed)
                 ensure_installed = { "c", "lua", "vim", "vimdoc", "query",
-                                    "python", "gitignore", "make", "cpp", "diff", "json", "markdown" },
+                                     "python", "gitignore", "make", "cpp", "diff", "json", 
+                                     "markdown", "matlab", "dockerfile" },
 
                 -- Install parsers synchronously (only applied to `ensure_installed`)
                 sync_install = false,
@@ -74,12 +75,6 @@ return require('packer').startup(function(use)
                 set completeopt+=menuone
                 set completeopt+=noselect
                 set shortmess+=c " Shut off completion messages
-
-                " Remap cycling through the complete list
-                inoremap <silent> <plug>(MUcompleteFwdKey) <c-h>
-                imap <c-h> <plug>(MUcompleteCycFwd)
-                inoremap <silent> <plug>(MUcompleteBwdKey) <c-b>
-                imap <c-b> <plug>(MUcompleteCycBwd)
             ]])
         end
     }
@@ -123,7 +118,27 @@ return require('packer').startup(function(use)
 
             -- Number of lines within which surrounding is searched
             n_lines = 40
-            }
+        }
+
+        -- Remove normal mode mappings
+        vim.keymap.del('n', 'sa')
+        vim.keymap.del('n', 'sd')
+        vim.keymap.del('n', 'sf')
+        vim.keymap.del('n', 'sF')
+        vim.keymap.del('n', 'sh')
+        vim.keymap.del('n', 'sr')
+        vim.keymap.del('n', 'sn')
+        vim.keymap.del('n', 'shn')
+        vim.keymap.del('n', 'sFn')
+        vim.keymap.del('n', 'sfn')
+        vim.keymap.del('n', 'srn')
+        vim.keymap.del('n', 'sdn')
+        vim.keymap.del('n', 'shl')
+        vim.keymap.del('n', 'sFl')
+        vim.keymap.del('n', 'sfl')
+        vim.keymap.del('n', 'srl')
+        vim.keymap.del('n', 'sdl')
+
         end
     }
 

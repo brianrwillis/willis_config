@@ -8,6 +8,7 @@
 --ignore-dir=build
 
 --ignore-file=is:tags
+--ignore-file=is:Session.vim
 
 --ignore-file=ext:o
 --ignore-file=ext:so

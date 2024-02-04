@@ -1,41 +1,104 @@
-" :E to destroy all swp files and reload all open buffers
+" Ctrl-K: quickfix implementation of grepping the word under the cursor/visual selection
+function! QuickfixSearch(normal_mode)
+    if a:normal_mode
+        " Use word under cursor
+        let word = expand('<cword>')
+    else
+        " Use 'z' reg to grab visual selection
+        norm gv"zy
+        let word = getreg("z")
+    endif
+
+    " Set search term (use the search pattern register directly, `set hls` must be executed after 
+    " function exits)
+    let @/ = word
+    exe "norm /\<cr>``"
+    
+    " List of files to search
+    let files = system('find -type f \( -name "*.cpp"
+                                   \ -o -name "*.c"
+                                   \ -o -name "*.h"
+                                   \ -o -name "*.hpp"
+                                   \ -o -name "*.py" \) | tr "\n" " "')
+    
+    " Find matches of word under cursor
+    if a:normal_mode
+        silent! exe 'grep! "' . word . '" -w ' . files
+    else
+        silent! exe 'grep! "' . word . '" ' . files
+    endif
+    
+    " Open quickfix list of results with 15 rows
+    copen 15
+endfunction!
+nnoremap  :call QuickfixSearch(1)<cr>:set hls<cr>
+vnoremap  :call QuickfixSearch(0)<cr>:set hls<cr>
+
+" Ctrl-K while in quickfix -> open file under cursor, center the screen, and go back to quickfix
+" Enter while in quickfix -> open file under cursor, close quickfix, and center the screen
+" Ctrl-\ while in quickfix -> open file under cursor in new tab, closing the original quickfix 
+autocmd FileType qf nnoremap <buffer>  <cr>zzj
+autocmd FileType qf nnoremap <buffer> <cr> <cr>:cclose<cr>zz
+autocmd FileType qf nnoremap <buffer>  <cr>j:cclose<cr>T
+
+
+" Ctrl-\ -> Open ctag jump in a new tab, or switch tabs if already open
+" function! CtagJumpNewTab()
+"     " Dupe buffer
+"     " Jump to definition
+"     " Cache filename
+"     " Close tab
+"     " Drop into filename
+"         " does not work for a not-drop, does not remember tag stack
+"         " we must work in the buffer that we invoked the jump in...
+"         " or cache the tag stack?
+" endfunction!
+" noremap  :call CtagJumpNewTab<cr>
+
+
+" :E -> destroy all swp files and reload all open buffers
 function! ReloadAll()
     let l:winview = winsaveview()
     let file = expand('%:f')
 
     " Destroy all swp files
-    :call system("rm `find . -type f -name \"*.sw*\"`")
+    call system("rm `find . -type f -name \"*.sw*\"`")
 
     " Reload all
-    :set autoread
-    :checktime
+    set autoread
+    checktime
 
     " Restore position
     silent! exe "e! " . file
     call winrestview(l:winview)
 
-    :set noautoread
+    set noautoread
 
-    :echo "Done reloading files"
+    echo "Done reloading files"
 endfunction!
 command! E :call ReloadAll()
 
 
-" Remove this swap file
-function! RemoveSwaps()
-    :call system("rm " . expand("%:p") . ".sw?")
+" F3 -> remove this swap file
+function! RemoveSwap()
+    call system("rm " . expand("%:h") . "/." . expand("%:t") . ".sw?")
 
     " FIXME: Put back in call to remove all swaps?
-    " :call system("rm `find -name '*.sw?'`")
+    " call system("rm `find -name '*.sw?'`")
 
     echo "Swap file fucked"
 endfunction!
-noremap <F3> :call RemoveSwaps()<cr>
+noremap <F3> :call RemoveSwap()<cr>
 
 
-" Generate a tags file at the current directory
+" F4 -> generate a tags file at the current directory
 function! TagGen()
     silent! !rm tags
+
+    if !executable('ctags')
+        echo "Ctags not installed!"
+        return
+    endif
 
     silent! !ctags -R --languages=c,c++,python . 2>/dev/null
 
@@ -49,13 +112,15 @@ noremap <F4> :call TagGen()<cr>
 
 " Close all non-active buffers
 function! CloseNonActive()
-    :redir @z
-    :silent! buffers!
-    :redir END
+    redir @z
+    silent! buffers
+    redir END
     let buffers = split(@z, '\n')
+
     for b in buffers
         let b = split(b, " ")
-        " if 'a' is in cols 1 or 2, it's active and we don't want to close it
+
+        " If 'a' is in cols 1 or 2, it's active and we don't want to close it
         if ((stridx(b[1], "a") == -1) && (stridx(b[2], "a") == -1))
             let ix = substitute(b[0], "u", "", "")
             exe "bw! " . ix
@@ -64,13 +129,15 @@ function! CloseNonActive()
 endfunction!
 
 
-" Autoformat
+" F5 -> autoformat
 function! Autoformat()
     let ft = expand('%:e')
     let pos = getpos('.')
     let search = @/
 
-    if (((ft == 'h') || (ft == 'c') || (ft == 'cpp') || (ft == 'hpp')) && filereadable(".clang-format"))
+    let is_c = ((ft == 'h') || (ft == 'c') || (ft == 'cpp') || (ft == 'hpp'))
+
+    if (is_c && filereadable(".clang-format"))
         " Use clang-format
         :%!clang-format
         echom "Applied clang-format"
@@ -107,13 +174,12 @@ function! IncludeGuard()
 endfunction!
 
 
-" Hotkey to go to respective .h/.c file, creates if non-existent
-function! SwitchToRespectiveFile()
+" Ctrl-F -> go to respective .h/.c file; create if non-existent
+function! SwapToRespectiveFile()
     let ft = expand('%:e')
-    let file_path = expand('%:f')
-    let file_path_no_ft = expand('%:r')
-    let file_name_no_ft = expand('%:t:r')
+    let file_dir = expand('%:h')
     let file_name = expand('%:t')
+    let file_name_no_ft = expand('%:t:r')
 
     " Special swaps:
     " * Between .bashrc and .bash_aliases
@@ -132,40 +198,44 @@ function! SwitchToRespectiveFile()
         return
     endif
 
-    function! OpenCppOrC(file)
-        " If there's any *.cpp, assume this is a cpp project
-        if (len(glob(expand('%:h') . "/*.cpp")))
-            exe "e " . a:file . ".cpp"
-        else
-            exe "e " . a:file . ".c"
-        endif
-    endfunction!
+    " If there's any *.cpp or *.hpp, assume this is a cpp project
+    let cpp_proj = system('find \( -name "*.cpp" -o -name "*.hpp" \) | wc -l')
 
-    function! OpenHppOrH(file)
-        " If there's any *.cpp, assume this is a cpp project
-        if (len(glob(expand('%:h') . "/*.cpp")))
-            exe "e " . a:file . ".hpp"
-        else
-            exe "e " . a:file . ".h"
-        endif
-    endfunction!
-
+    " Detect if header or source, then switch to respective file
     " If opened a file with no extension (didn't enter 'c' or 'h' after tabbing), open .c/.cpp
-    if (matchstr(file_path, '.$') == ".")
-        :call OpenCppOrC(file_path_no_ft)
+    if ((ft == 'h') || (ft == 'hpp') || (matchstr(file_name, '.$') == "."))
+        if (cpp_proj)
+            let file_name_to_open = file_name_no_ft . ".cpp"
+        else
+            let file_name_to_open = file_name_no_ft . ".c"
+        endif
+    elseif ((ft == 'c') || (ft == 'cpp'))
+        if (cpp_proj)
+            let file_name_to_open = file_name_no_ft . ".hpp"
+        else
+            let file_name_to_open = file_name_no_ft . ".h"
+        endif
+    else
+        " Not a .c, .cpp, .h, .hpp, or file ending in '.', so do nothing
         return
     endif
 
-    " Detect if header or source, then switch to respective file
-    if ((ft == 'h') || (ft == 'hpp'))
-        :call OpenCppOrC(file_path_no_ft)
-    elseif ((ft == 'c') || (ft == 'cpp'))
-        :call OpenHppOrH(file_path_no_ft)
-    else
-        " Not a c, cpp, h, hpp, or file ending in '.', so do nothing
+    " First check if the file exists already at the current dir or up/down one dir
+    " If it doesn't exist anywhere, open it at the current buffer
+    let file_path_to_open = system("find " . file_dir . "/.. -name " . file_name_to_open . " | head -n 1")
+
+    " Remove any "../" in the file path
+    let file_path_to_open = simplify(file_path_to_open)
+
+    " v:shell_error isn't populating, just search for the error string
+    if (stridx(file_path_to_open, "No such file or directory") == -1)
+        exe "e " . file_path_to_open
+    else 
+        exe "e " . expand('%:h') . '/' . file_name_to_open
     endif
 endfunction!
-nnoremap  :call SwitchToRespectiveFile()<cr>
+nnoremap  :call SwapToRespectiveFile()<cr>
+vnoremap  :call SwapToRespectiveFile()<cr>
 
 " Auto-increments a selection of numbers in visual selection, e.g.:
 " 0      0
@@ -202,7 +272,7 @@ function! LinearIncrement() range
 endfunction!
 
 
-" Loop through macro and align all '\'s
+" Loop through lines and align all '\'s
 function! AlignSlashes() range
     let l:winview = winsaveview()
     let max_len = 0
@@ -243,8 +313,20 @@ function! AlignSlashes() range
     call winrestview(l:winview)
 endfunction!
 
+" Ctrl-C -> Toggle color column at column 100
+function! ToggleColorColumn()
+    if (&colorcolumn == 0)
+        set colorcolumn=100
+    else
+        set colorcolumn=0
+    endif
+endfunction!
+nnoremap  :call ToggleColorColumn()<cr>
+inoremap  :call ToggleColorColumn()<cr>a
+
 " Create a C program from the C template file
 function! CreateC()
     " Place contents of template file
     0r ~/.config/nvim/templates/c
+    set ft=c
 endfunction!

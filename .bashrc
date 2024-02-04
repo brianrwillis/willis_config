@@ -304,6 +304,9 @@ print-swap() {
     done | sort -k 2 -n
 }
 
+# Restart audio driver
+alias audio="systemctl --user restart pulseaudio"
+
 # If we don't study the commands of the past, we're doomed to retype them
 HISTSIZE=100000
 HISTFILESIZE=100000

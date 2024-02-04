@@ -49,8 +49,8 @@ local function save_profiles(threshold)
 end
 
 time([[Luarocks path setup]], true)
-local package_path_str = "/home/bwillis/.cache/nvim/packer_hererocks/2.1.1703358377/share/lua/5.1/?.lua;/home/bwillis/.cache/nvim/packer_hererocks/2.1.1703358377/share/lua/5.1/?/init.lua;/home/bwillis/.cache/nvim/packer_hererocks/2.1.1703358377/lib/luarocks/rocks-5.1/?.lua;/home/bwillis/.cache/nvim/packer_hererocks/2.1.1703358377/lib/luarocks/rocks-5.1/?/init.lua"
-local install_cpath_pattern = "/home/bwillis/.cache/nvim/packer_hererocks/2.1.1703358377/lib/lua/5.1/?.so"
+local package_path_str = "/home/bwillis/.cache/nvim/packer_hererocks/2.1.1692716794/share/lua/5.1/?.lua;/home/bwillis/.cache/nvim/packer_hererocks/2.1.1692716794/share/lua/5.1/?/init.lua;/home/bwillis/.cache/nvim/packer_hererocks/2.1.1692716794/lib/luarocks/rocks-5.1/?.lua;/home/bwillis/.cache/nvim/packer_hererocks/2.1.1692716794/lib/luarocks/rocks-5.1/?/init.lua"
+local install_cpath_pattern = "/home/bwillis/.cache/nvim/packer_hererocks/2.1.1692716794/lib/lua/5.1/?.so"
 if not string.find(package.path, package_path_str, 1, true) then
   package.path = package.path .. ';' .. package_path_str
 end
@@ -81,7 +81,7 @@ _G.packer_plugins = {
     url = "https://github.com/sainnhe/gruvbox-material"
   },
   ["mini.surround"] = {
-    config = { "\27LJ\2\nú\1\0\0\4\0\6\0\t6\0\0\0'\2\1\0B\0\2\0029\0\2\0005\2\3\0005\3\4\0=\3\5\2B\0\2\1K\0\1\0\rmappings\1\0\t\freplace\asr\14find_left\asF\vdelete\asd\badd\asa\14highlight\ash\16suffix_next\6n\16suffix_last\6l\19update_n_lines\asn\tfind\asf\1\0\3\27respect_selection_type\2\23highlight_duration\3ô\3\fn_lines\3(\nsetup\18mini.surround\frequire\0" },
+    config = { "\27LJ\2\nà\5\0\0\4\0\27\0o6\0\0\0'\2\1\0B\0\2\0029\0\2\0005\2\3\0005\3\4\0=\3\5\2B\0\2\0016\0\6\0009\0\a\0009\0\b\0'\2\t\0'\3\n\0B\0\3\0016\0\6\0009\0\a\0009\0\b\0'\2\t\0'\3\v\0B\0\3\0016\0\6\0009\0\a\0009\0\b\0'\2\t\0'\3\f\0B\0\3\0016\0\6\0009\0\a\0009\0\b\0'\2\t\0'\3\r\0B\0\3\0016\0\6\0009\0\a\0009\0\b\0'\2\t\0'\3\14\0B\0\3\0016\0\6\0009\0\a\0009\0\b\0'\2\t\0'\3\15\0B\0\3\0016\0\6\0009\0\a\0009\0\b\0'\2\t\0'\3\16\0B\0\3\0016\0\6\0009\0\a\0009\0\b\0'\2\t\0'\3\17\0B\0\3\0016\0\6\0009\0\a\0009\0\b\0'\2\t\0'\3\18\0B\0\3\0016\0\6\0009\0\a\0009\0\b\0'\2\t\0'\3\19\0B\0\3\0016\0\6\0009\0\a\0009\0\b\0'\2\t\0'\3\20\0B\0\3\0016\0\6\0009\0\a\0009\0\b\0'\2\t\0'\3\21\0B\0\3\0016\0\6\0009\0\a\0009\0\b\0'\2\t\0'\3\22\0B\0\3\0016\0\6\0009\0\a\0009\0\b\0'\2\t\0'\3\23\0B\0\3\0016\0\6\0009\0\a\0009\0\b\0'\2\t\0'\3\24\0B\0\3\0016\0\6\0009\0\a\0009\0\b\0'\2\t\0'\3\25\0B\0\3\0016\0\6\0009\0\a\0009\0\b\0'\2\t\0'\3\26\0B\0\3\1K\0\1\0\bsdl\bsrl\bsfl\bsFl\bshl\bsdn\bsrn\bsfn\bsFn\bshn\asn\asr\ash\asF\asf\asd\asa\6n\bdel\vkeymap\bvim\rmappings\1\0\t\14highlight\ash\vdelete\asd\badd\asa\16suffix_next\6n\16suffix_last\6l\19update_n_lines\asn\freplace\asr\14find_left\asF\tfind\asf\1\0\3\23highlight_duration\3ô\3\27respect_selection_type\2\fn_lines\3(\nsetup\18mini.surround\frequire\0" },
     loaded = true,
     path = "/home/bwillis/.local/share/nvim/site/pack/packer/start/mini.surround",
     url = "https://github.com/echasnovski/mini.surround"
@@ -93,7 +93,7 @@ _G.packer_plugins = {
     url = "https://github.com/terrortylor/nvim-comment"
   },
   ["nvim-treesitter"] = {
-    config = { "\27LJ\2\n‰\2\0\0\4\0\b\0\v6\0\0\0'\2\1\0B\0\2\0029\0\2\0005\2\4\0005\3\3\0=\3\5\0025\3\6\0=\3\a\2B\0\2\1K\0\1\0\14highlight\1\0\2\venable\2&additional_vim_regex_highlighting\1\21ensure_installed\1\0\2\17auto_install\2\17sync_install\1\1\r\0\0\6c\blua\bvim\vvimdoc\nquery\vpython\14gitignore\tmake\bcpp\tdiff\tjson\rmarkdown\nsetup\28nvim-treesitter.configs\frequire\0" },
+    config = { "\27LJ\2\n›\2\0\0\4\0\b\0\v6\0\0\0'\2\1\0B\0\2\0029\0\2\0005\2\4\0005\3\3\0=\3\5\0025\3\6\0=\3\a\2B\0\2\1K\0\1\0\14highlight\1\0\2&additional_vim_regex_highlighting\1\venable\2\21ensure_installed\1\0\2\17auto_install\2\17sync_install\1\1\15\0\0\6c\blua\bvim\vvimdoc\nquery\vpython\14gitignore\tmake\bcpp\tdiff\tjson\rmarkdown\vmatlab\15dockerfile\nsetup\28nvim-treesitter.configs\frequire\0" },
     loaded = true,
     path = "/home/bwillis/.local/share/nvim/site/pack/packer/start/nvim-treesitter",
     url = "https://github.com/nvim-treesitter/nvim-treesitter"
@@ -104,7 +104,7 @@ _G.packer_plugins = {
     url = "https://github.com/wbthomason/packer.nvim"
   },
   ["vim-mucomplete"] = {
-    config = { "\27LJ\2\né\3\0\0\3\0\3\0\0056\0\0\0009\0\1\0'\2\2\0B\0\2\1K\0\1\0É\3                set completeopt+=menuone\n                set completeopt+=noselect\n                set shortmess+=c \" Shut off completion messages\n\n                \" Remap cycling through the complete list\n                inoremap <silent> <plug>(MUcompleteFwdKey) <c-h>\n                imap <c-h> <plug>(MUcompleteCycFwd)\n                inoremap <silent> <plug>(MUcompleteBwdKey) <c-b>\n                imap <c-b> <plug>(MUcompleteCycBwd)\n            \bcmd\bvim\0" },
+    config = { "\27LJ\2\nÄ\1\0\0\3\0\3\0\0056\0\0\0009\0\1\0'\2\2\0B\0\2\1K\0\1\0¤\1                set completeopt+=menuone\n                set completeopt+=noselect\n                set shortmess+=c \" Shut off completion messages\n            \bcmd\bvim\0" },
     loaded = true,
     path = "/home/bwillis/.local/share/nvim/site/pack/packer/start/vim-mucomplete",
     url = "https://github.com/lifepillar/vim-mucomplete"
@@ -117,6 +117,14 @@ _G.packer_plugins = {
 }
 
 time([[Defining packer_plugins]], false)
+-- Config for: nvim-treesitter
+time([[Config for nvim-treesitter]], true)
+try_loadstring("\27LJ\2\n›\2\0\0\4\0\b\0\v6\0\0\0'\2\1\0B\0\2\0029\0\2\0005\2\4\0005\3\3\0=\3\5\0025\3\6\0=\3\a\2B\0\2\1K\0\1\0\14highlight\1\0\2&additional_vim_regex_highlighting\1\venable\2\21ensure_installed\1\0\2\17auto_install\2\17sync_install\1\1\15\0\0\6c\blua\bvim\vvimdoc\nquery\vpython\14gitignore\tmake\bcpp\tdiff\tjson\rmarkdown\vmatlab\15dockerfile\nsetup\28nvim-treesitter.configs\frequire\0", "config", "nvim-treesitter")
+time([[Config for nvim-treesitter]], false)
+-- Config for: mini.surround
+time([[Config for mini.surround]], true)
+try_loadstring("\27LJ\2\nà\5\0\0\4\0\27\0o6\0\0\0'\2\1\0B\0\2\0029\0\2\0005\2\3\0005\3\4\0=\3\5\2B\0\2\0016\0\6\0009\0\a\0009\0\b\0'\2\t\0'\3\n\0B\0\3\0016\0\6\0009\0\a\0009\0\b\0'\2\t\0'\3\v\0B\0\3\0016\0\6\0009\0\a\0009\0\b\0'\2\t\0'\3\f\0B\0\3\0016\0\6\0009\0\a\0009\0\b\0'\2\t\0'\3\r\0B\0\3\0016\0\6\0009\0\a\0009\0\b\0'\2\t\0'\3\14\0B\0\3\0016\0\6\0009\0\a\0009\0\b\0'\2\t\0'\3\15\0B\0\3\0016\0\6\0009\0\a\0009\0\b\0'\2\t\0'\3\16\0B\0\3\0016\0\6\0009\0\a\0009\0\b\0'\2\t\0'\3\17\0B\0\3\0016\0\6\0009\0\a\0009\0\b\0'\2\t\0'\3\18\0B\0\3\0016\0\6\0009\0\a\0009\0\b\0'\2\t\0'\3\19\0B\0\3\0016\0\6\0009\0\a\0009\0\b\0'\2\t\0'\3\20\0B\0\3\0016\0\6\0009\0\a\0009\0\b\0'\2\t\0'\3\21\0B\0\3\0016\0\6\0009\0\a\0009\0\b\0'\2\t\0'\3\22\0B\0\3\0016\0\6\0009\0\a\0009\0\b\0'\2\t\0'\3\23\0B\0\3\0016\0\6\0009\0\a\0009\0\b\0'\2\t\0'\3\24\0B\0\3\0016\0\6\0009\0\a\0009\0\b\0'\2\t\0'\3\25\0B\0\3\0016\0\6\0009\0\a\0009\0\b\0'\2\t\0'\3\26\0B\0\3\1K\0\1\0\bsdl\bsrl\bsfl\bsFl\bshl\bsdn\bsrn\bsfn\bsFn\bshn\asn\asr\ash\asF\asf\asd\asa\6n\bdel\vkeymap\bvim\rmappings\1\0\t\14highlight\ash\vdelete\asd\badd\asa\16suffix_next\6n\16suffix_last\6l\19update_n_lines\asn\freplace\asr\14find_left\asF\tfind\asf\1\0\3\23highlight_duration\3ô\3\27respect_selection_type\2\fn_lines\3(\nsetup\18mini.surround\frequire\0", "config", "mini.surround")
+time([[Config for mini.surround]], false)
 -- Config for: nvim-comment
 time([[Config for nvim-comment]], true)
 try_loadstring("\27LJ\2\nR\0\0\3\0\4\0\a6\0\0\0'\2\1\0B\0\2\0029\0\2\0005\2\3\0B\0\2\1K\0\1\0\1\0\1\20create_mappings\1\nsetup\17nvim_comment\frequire\0", "config", "nvim-comment")
@@ -125,17 +133,9 @@ time([[Config for nvim-comment]], false)
 time([[Config for gruvbox-material]], true)
 try_loadstring("\27LJ\2\nû\1\0\0\3\0\3\0\0056\0\0\0009\0\1\0'\2\2\0B\0\2\1K\0\1\0Û\1                let g:gruvbox_material_background = \"hard\"\n                let g:gruvbox_material_better_performance = 1\n                set background=dark\n                colorscheme gruvbox-material\n            \bcmd\bvim\0", "config", "gruvbox-material")
 time([[Config for gruvbox-material]], false)
--- Config for: mini.surround
-time([[Config for mini.surround]], true)
-try_loadstring("\27LJ\2\nú\1\0\0\4\0\6\0\t6\0\0\0'\2\1\0B\0\2\0029\0\2\0005\2\3\0005\3\4\0=\3\5\2B\0\2\1K\0\1\0\rmappings\1\0\t\freplace\asr\14find_left\asF\vdelete\asd\badd\asa\14highlight\ash\16suffix_next\6n\16suffix_last\6l\19update_n_lines\asn\tfind\asf\1\0\3\27respect_selection_type\2\23highlight_duration\3ô\3\fn_lines\3(\nsetup\18mini.surround\frequire\0", "config", "mini.surround")
-time([[Config for mini.surround]], false)
--- Config for: nvim-treesitter
-time([[Config for nvim-treesitter]], true)
-try_loadstring("\27LJ\2\n‰\2\0\0\4\0\b\0\v6\0\0\0'\2\1\0B\0\2\0029\0\2\0005\2\4\0005\3\3\0=\3\5\0025\3\6\0=\3\a\2B\0\2\1K\0\1\0\14highlight\1\0\2\venable\2&additional_vim_regex_highlighting\1\21ensure_installed\1\0\2\17auto_install\2\17sync_install\1\1\r\0\0\6c\blua\bvim\vvimdoc\nquery\vpython\14gitignore\tmake\bcpp\tdiff\tjson\rmarkdown\nsetup\28nvim-treesitter.configs\frequire\0", "config", "nvim-treesitter")
-time([[Config for nvim-treesitter]], false)
 -- Config for: vim-mucomplete
 time([[Config for vim-mucomplete]], true)
-try_loadstring("\27LJ\2\né\3\0\0\3\0\3\0\0056\0\0\0009\0\1\0'\2\2\0B\0\2\1K\0\1\0É\3                set completeopt+=menuone\n                set completeopt+=noselect\n                set shortmess+=c \" Shut off completion messages\n\n                \" Remap cycling through the complete list\n                inoremap <silent> <plug>(MUcompleteFwdKey) <c-h>\n                imap <c-h> <plug>(MUcompleteCycFwd)\n                inoremap <silent> <plug>(MUcompleteBwdKey) <c-b>\n                imap <c-b> <plug>(MUcompleteCycBwd)\n            \bcmd\bvim\0", "config", "vim-mucomplete")
+try_loadstring("\27LJ\2\nÄ\1\0\0\3\0\3\0\0056\0\0\0009\0\1\0'\2\2\0B\0\2\1K\0\1\0¤\1                set completeopt+=menuone\n                set completeopt+=noselect\n                set shortmess+=c \" Shut off completion messages\n            \bcmd\bvim\0", "config", "vim-mucomplete")
 time([[Config for vim-mucomplete]], false)
 
 _G._packer.inside_compile = false

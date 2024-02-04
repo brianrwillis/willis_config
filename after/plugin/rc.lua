@@ -5,7 +5,6 @@
 -- put ctag jump new tab back in? Or find better way...
 --    put in a case where if the file is already open in a new tab, just go to it
 --    or watch a video on how better to navigate in vim
--- put C-L back in (or find better way...)
 -- Figure out Session.vim
 
 ---------------- Settings ----------------
@@ -21,11 +20,14 @@ vim.opt.timeoutlen = 200
 vim.opt.ttimeoutlen = 200
 
 vim.opt.number = true                  -- Number lines
-vim.opt.hidden = true                  -- Fix windowing
+vim.opt.hidden = true                  -- Keep buffers open when tab is closed
 vim.opt.laststatus = 2                 -- Always display statusline
 vim.opt.cmdheight = 2                  -- Less 'Press enter to continue' on cmd line
 vim.opt.showtabline = 2                -- Always show tabs, even if only one file is open
+vim.opt.cursorline = true              -- Highlight current line
+vim.opt.textwidth = 0                  -- Never auto-newline
 vim.opt.mouse = "a"                    -- New-school
+vim.opt.mousemodel = "extend"          -- Don't use popup menu for right click
 vim.opt.display = "lastline"           -- Show partial word-wrapped lines
 vim.opt.backspace = "eol,indent,start" -- Fix backspacing after a newline
 
@@ -38,17 +40,23 @@ vim.opt.shiftround = true        -- Round to nearest multiple of shiftwidth
 vim.opt.tabstop = 4              -- Size of tab
 vim.opt.softtabstop = 0          -- Size of tab in editing operations
 vim.opt.shiftwidth = 4           -- Number of spaces used for each autoindent
-        
+
 -- Do not autoindent after a ":", "else", or "endif"
-vim.opt.indentkeys:remove("<:>") 
-vim.opt.indentkeys:remove("=else") 
-vim.opt.indentkeys:remove("=endif") 
+vim.opt.cinkeys:remove(":")
+vim.opt.indentkeys:remove("<:>")
+vim.opt.indentkeys:remove(":")
+vim.opt.indentkeys:remove("=else")
+-- vim.opt.indentkeys:remove("=endif")
+vim.opt.indentkeys:remove("=endfor")
 
 -- Statusline
 vim.opt.statusline = "%F %m%r"             -- <filepath> [+][RO]
 vim.opt.statusline:append("%=")            -- start right-aligning
--- vim.opt.statusline:append("[%l, %c] %p%%") -- [line, col] file%
-vim.opt.statusline:append("so: %{&scroll}  [%l, %c] %p%%") -- FIXME: scroll debugging
+vim.opt.statusline:append("%{ObsessionStatus()} [%l, %c] %p%%") -- [Session running] [line, col] file%
+-- vim.opt.statusline:append("so: %{&scroll}  [%l, %c] %p%%") -- FIXME: scroll debugging
+
+-- Combine vim and system clipboards
+vim.opt.clipboard = "unnamedplus"
 
 -- Swap files go in the dir where the OG files live
 vim.opt.directory = "."
@@ -69,7 +77,7 @@ vim.keymap.set({"n", "v"}, " ", "<Nop>")
 vim.keymap.set("n", "n", "nzz")
 vim.keymap.set("n", "N", "Nzz")
 vim.keymap.set("n", "", "zz")
-vim.keymap.set("n", "", "<c-i>zz") -- Remap from Ctrl-I
+vim.keymap.set("n", "", "<C-I>zz") -- Remap from Ctrl-I
 vim.keymap.set("n", "", "zz")
 vim.keymap.set("n", "", "zz")
 vim.keymap.set("n", "", "zz")
@@ -80,7 +88,7 @@ vim.keymap.set("n", "#", ":keepjumps normal! mZ#`Z<cr>")
 vim.keymap.set("n", "*", ":keepjumps normal! mZ*`Z<cr>")
 
 -- Ctrl-J: escape, turn off highlights, clear cmd line
-vim.keymap.set({"n", "v", "i", "c"}, "<c-j>", ":nohls<cr>:echo<cr>")
+vim.keymap.set({"n", "v", "i", "c"}, "<C-J>", ":nohls<cr>:echo<cr>")
 
 -- Hooks for system clipboard
 vim.keymap.set({"n", "v"}, "<leader>y", [["+y]])
@@ -108,6 +116,9 @@ vim.keymap.set("n", "Tg", "gT")
 vim.keymap.set("n", "", ":tabe %:h/")
 vim.keymap.set("n", "", ":e %:h/")
 
+-- Ctrl-\ -> open tag in new tab (create mark, dupe buffer, go to mark, jump)
+vim.keymap.set("n", "", "mz:tabe %<cr>`z")
+
 -- Tab for completion
 -- (Now accomplished by mucomplete)
 -- vim.keymap.set("i", "<Tab>", "<C-P>")
@@ -126,7 +137,7 @@ vim.keymap.set("n", "=", "==")
 vim.keymap.set({"n", "v", "i", "c"}, "<F1>", "<Nop>")
 
 -- When a popupmenu is visible, make <cr> not create a newline
-vim.api.nvim_set_keymap('i', '<cr>', 'pumvisible() ? "<c-y>" : "<cr>"', {expr = true})
+vim.api.nvim_set_keymap('i', '<cr>', 'pumvisible() ? "<C-Y>" : "<cr>"', {expr = true})
 
 -- Comment plugin hotkeys
 vim.keymap.set("n", "", ":CommentToggle<cr>")
@@ -151,7 +162,7 @@ vim.api.nvim_create_user_command("S",
 ---------------- Autocommands ----------------
 -- Set tab size for different filetypes and directories
 vim.api.nvim_create_autocmd({"BufEnter", "BufWinEnter"}, {
-    pattern = {"*.yaml", "*/augmental/**"},
+    pattern = {"*.yaml", "*/augmental/**", "*/repos/**"},
     callback = function()
         vim.opt_local.tabstop = 2
         vim.opt_local.shiftwidth = 2
@@ -159,11 +170,11 @@ vim.api.nvim_create_autocmd({"BufEnter", "BufWinEnter"}, {
     end
 })
 
--- When in a vim or lua file, <c-k> auto opens help for cword
+-- When in a vim or lua file, <C-K> auto opens help for cword
 vim.api.nvim_create_autocmd({"BufEnter", "BufWinEnter"}, {
     pattern = {"*.vim", "*.lua"},
     callback = function()
-        vim.opt_local.keywordprg = ":help"    
+        vim.opt_local.keywordprg = ":help"
     end
 })
 
@@ -221,23 +232,23 @@ vim.api.nvim_create_autocmd("BufWritePre", {
 
 ---------------- Disable command history unless Ctrl-F was used ----------------
 local function escape(keys)
-  return vim.api.nvim_replace_termcodes(keys, true, false, true)
+    return vim.api.nvim_replace_termcodes(keys, true, false, true)
 end
 
 vim.keymap.set("c", "<C-f>", function()
-  vim.g.requested_cmdwin = true
-  vim.api.nvim_feedkeys(escape "<C-f>", "n", false)
+    vim.g.requested_cmdwin = true
+    vim.api.nvim_feedkeys(escape "<C-f>", "n", false)
 end)
 
 vim.api.nvim_create_autocmd("CmdWinEnter", {
-  group = vim.api.nvim_create_augroup("CWE", { clear = true }),
-  pattern = "*",
-  callback = function()
-    if vim.g.requested_cmdwin then
-      vim.g.requested_cmdwin = nil
-    else
-      vim.api.nvim_feedkeys(escape ":q<CR>:", "m", false)
-    end
+    group = vim.api.nvim_create_augroup("CWE", { clear = true }),
+    pattern = "*",
+    callback = function()
+        if vim.g.requested_cmdwin then
+            vim.g.requested_cmdwin = nil
+        else
+            vim.api.nvim_feedkeys(escape ":q<cr>:", "m", false)
+        end
   end,
 })
 --------------------------------------------------------------------------------
