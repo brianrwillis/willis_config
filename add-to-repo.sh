@@ -23,7 +23,6 @@ cp -r ~/.vim/templates .vim 2>/dev/null
 cp -r ~/.config/nvim/init.lua . 2>/dev/null
 cp -r ~/.config/nvim/after . 2>/dev/null
 cp -r ~/.config/nvim/lua . 2>/dev/null
-cp -r ~/.config/nvim/plugin . 2>/dev/null
 cp -r ~/.config/nvim/templates . 2>/dev/null
 
 # Terminal profile, if gnome-terminal exists
