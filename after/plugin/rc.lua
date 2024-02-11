@@ -1,6 +1,5 @@
 -- TODO:
 -- fix commenting empty line
--- deduce scroll overriding
 -- figure out how to split up tags files for speed; use hierarchy in mucomplete?
 -- put ctag jump new tab back in? Or find better way...
 --    put in a case where if the file is already open in a new tab, just go to it
@@ -33,27 +32,17 @@ vim.opt.backspace = "eol,indent,start" -- Fix backspacing after a newline
 
 vim.opt.wildmode = "list:longest"      -- Shell-like tab complete
 
-vim.opt.expandtab = true         -- Insert spaces, not a tab, when tabbing
-vim.opt.autoindent = true        -- Indent... smart-ish
-vim.opt.smarttab = false         -- Do not delete more than one space when backspacing
-vim.opt.shiftround = true        -- Round to nearest multiple of shiftwidth
-vim.opt.tabstop = 4              -- Size of tab
-vim.opt.softtabstop = 0          -- Size of tab in editing operations
-vim.opt.shiftwidth = 4           -- Number of spaces used for each autoindent
-
 -- Do not autoindent after a ":", "else", or "endif"
 vim.opt.cinkeys:remove(":")
 vim.opt.indentkeys:remove("<:>")
 vim.opt.indentkeys:remove(":")
 vim.opt.indentkeys:remove("=else")
--- vim.opt.indentkeys:remove("=endif")
 vim.opt.indentkeys:remove("=endfor")
 
 -- Statusline
 vim.opt.statusline = "%F %m%r"             -- <filepath> [+][RO]
 vim.opt.statusline:append("%=")            -- start right-aligning
 vim.opt.statusline:append("%{ObsessionStatus()} [%l, %c] %p%%") -- [Session running] [line, col] file%
--- vim.opt.statusline:append("so: %{&scroll}  [%l, %c] %p%%") -- FIXME: scroll debugging
 
 -- Combine vim and system clipboards
 vim.opt.clipboard = "unnamedplus"
@@ -160,24 +149,6 @@ vim.api.nvim_create_user_command("S",
 
 
 ---------------- Autocommands ----------------
--- Set tab size for different filetypes and directories
-vim.api.nvim_create_autocmd({"BufEnter", "BufWinEnter"}, {
-    pattern = {"*.yaml", "*/augmental/**", "*/repos/**"},
-    callback = function()
-        vim.opt_local.tabstop = 2
-        vim.opt_local.shiftwidth = 2
-        vim.opt_local.softtabstop = 2
-    end
-})
-
--- When in a vim or lua file, <C-K> auto opens help for cword
-vim.api.nvim_create_autocmd({"BufEnter", "BufWinEnter"}, {
-    pattern = {"*.vim", "*.lua"},
-    callback = function()
-        vim.opt_local.keywordprg = ":help"
-    end
-})
-
 -- Generic buffer enter autocommands for all files
 vim.api.nvim_create_autocmd({"BufEnter", "BufWinEnter"}, {
     pattern = "*",
@@ -188,6 +159,33 @@ vim.api.nvim_create_autocmd({"BufEnter", "BufWinEnter"}, {
 
         -- Force the cursor to cmd mode
         vim.cmd("norm! ")
+
+        -- Set tab settings that ftplugins love to override
+        vim.opt.expandtab = true         -- Insert spaces, not a tab, when tabbing
+        vim.opt.autoindent = true        -- Indent... smart-ish
+        vim.opt.smarttab = false         -- Do not delete more than one space when backspacing
+        vim.opt.shiftround = true        -- Round to nearest multiple of shiftwidth
+        vim.opt.tabstop = 4              -- Size of tab
+        vim.opt.softtabstop = 0          -- Size of tab in editing operations
+        vim.opt.shiftwidth = 4           -- Number of spaces used for each autoindent
+    end
+})
+
+-- Set tab size for different filetypes and directories
+vim.api.nvim_create_autocmd({"BufEnter", "BufWinEnter"}, {
+    pattern = {"*.yaml", "*/augmental/**", "*/repos/**"},
+    callback = function()
+        vim.opt.tabstop = 2
+        vim.opt.shiftwidth = 2
+        vim.opt.softtabstop = 2
+    end
+})
+
+-- When in a vim or lua file, <C-K> auto opens help for cword
+vim.api.nvim_create_autocmd({"BufEnter", "BufWinEnter"}, {
+    pattern = {"*.vim", "*.lua"},
+    callback = function()
+        vim.opt_local.keywordprg = ":help"
     end
 })
 
@@ -208,7 +206,6 @@ vim.api.nvim_create_autocmd("VimEnter", {
 })
 
 -- Set Ctrl-U/D to 1/3rd of screen with a max of 15 rows (must be done after runtime configs load)
--- FIXME: still intermittent
 vim.api.nvim_create_autocmd({"BufEnter", "BufWinEnter", "VimResized"}, {
     pattern = "*",
     callback = function()
