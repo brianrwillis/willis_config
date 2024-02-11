@@ -9,6 +9,7 @@
 
 ---------------- Settings ----------------
 -- set <leader>
+-- FIXME: currently unused
 vim.g.mapleader = " "
 
 -- Nonvolatile undo
@@ -30,6 +31,7 @@ vim.opt.mouse = "a"                    -- New-school
 vim.opt.mousemodel = "extend"          -- Don't use popup menu for right click
 vim.opt.display = "lastline"           -- Show partial word-wrapped lines
 vim.opt.backspace = "eol,indent,start" -- Fix backspacing after a newline
+vim.opt.inccommand = ""                -- Do not show preview of substitution while typing
 
 vim.opt.wildmode = "list:longest"      -- Shell-like tab complete
 
@@ -87,25 +89,17 @@ vim.keymap.set("n", "", "zz")
 vim.keymap.set("n", "#", ":keepjumps normal! mZ#`Z<cr>")
 vim.keymap.set("n", "*", ":keepjumps normal! mZ*`Z<cr>")
 
--- Ctrl-J: escape, turn off highlights, clear cmd line
+-- Ctrl-J -> escape, turn off highlights, clear cmd line
 vim.keymap.set({"n", "v", "i", "c"}, "<C-J>", ":nohls<cr>:echo<cr>")
-
--- Hooks for system clipboard
-vim.keymap.set({"n", "v"}, "<leader>y", [["+y]])
-vim.keymap.set({"n", "v"}, "<leader>d", [["+d]])
-vim.keymap.set("n",        "<leader>p", [["+p]])
-vim.keymap.set("n",        "<leader>P", [["+P]])
-
--- Don't overwrite clipboard text on paste over
-vim.keymap.set("v", "p",         [[pgvy]])
-vim.keymap.set("v", "<leader>p", [["_c"+p]])
-vim.keymap.set("v", "<leader>P", [["_c"+P]])
 
 -- Black hole deletes
 vim.keymap.set({"n", "v"}, "D",  [["_d]])
 vim.keymap.set("n",        "DD", [["_dd]])
 vim.keymap.set({"n", "v"}, "C",  [["_c]])
 vim.keymap.set("n",        "CC", [["_cc]])
+
+-- Don't overwrite clipboard text on paste over
+vim.keymap.set("v", "p", [[pgvy]])
 
 -- Fucksake
 vim.keymap.set("n", "tg", "gt")
@@ -188,6 +182,14 @@ vim.api.nvim_create_autocmd({"BufEnter", "BufWinEnter"}, {
 
         -- Force the cursor to cmd mode
         vim.cmd("norm! ")
+    end
+})
+
+vim.api.nvim_create_autocmd("TabClosed", {
+    pattern = "*",
+    callback = function()
+        -- When we close a tab, always pop into the left tab
+        vim.cmd("tabprevious")
     end
 })
 

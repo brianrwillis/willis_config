@@ -134,7 +134,7 @@ alias iv="nvim"
 alias vo="nvim"
 alias ov="nvim"
 
-alias :q="echo idiot"
+alias :q="echo idiot ; sleep 0.5 ; exit"
 
 alias akc="ack"
 alias acj="akc"
@@ -251,7 +251,17 @@ dec() {
 
 # find -name "*<thing>*" is too much to fuckin type god damn it
 # FIXME: find a nice way to add variable number of options at the end
-fin () {
+fin() {
+    filter=true
+    brian_find "$@"
+}
+
+finn() {
+    filter=false
+    brian_find "$@"
+}
+
+brian_find() {
     suds=""
 
     if [[ ($# == 0) ]]; then
@@ -269,20 +279,23 @@ fin () {
             fi
         fi
 
-        command $suds find "$dir" -name "*$search*" 
-                                                     # -type f ! -path "*/\.git/*"   \
-                                                     #         ! -path "/*undodir/*" \
-                                                     #         ! -path "*/outputs/*" \
-                                                     #         ! -path "*\.so"       \
-                                                     #         ! -path "*\.o"        \
-                                                     #         ! -path "*\.omc"      \
-                                                     #         ! -path "*\.a"        \
-                                                     #         ! -path "*\.elf"      \
-                                                     #         ! -path "*/outputs/*" \
-                                                     #         ! -name "*\.swp"      \
-                                                     #         ! -name "*\.swo"      \
-                                                     #         ! -name "*\.swm"      \
-                                                     #         ! -name "*\.swn"
+        if [[ $filter == true ]]; then
+            command $suds find "$dir" -name "*$search*" -type f ! -path "*/\.git/*"   \
+                                                                ! -path "/*undodir/*" \
+                                                                ! -path "*\.so"       \
+                                                                ! -path "*\.o"        \
+                                                                ! -path "*\.omc"      \
+                                                                ! -path "*\.a"        \
+                                                                ! -path "*\.elf"      \
+                                                                ! -path "*\.bin"      \
+                                                                ! -path "*/outputs/*" \
+                                                                ! -path "*/build/*"   \
+                                                                ! -name "*\.sw[a-p]"  \
+                                                                ! -name "tags"        \
+                                                                ! -name "Session.vim"      
+        else
+            command $suds find "$dir" -name "*$search*" 
+        fi
     fi
 }
 

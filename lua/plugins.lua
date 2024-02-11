@@ -142,6 +142,9 @@ return require('packer').startup(function(use)
         end
     }
 
-    -- Create sessions files for tmux-resurrect
+    -- Create sessions files for reloading vim environs
     use "tpope/vim-obsession"
+
+    -- Auto ctag gen
+    use "ludovicchabant/vim-gutentags"
 end)

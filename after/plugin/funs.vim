@@ -9,8 +9,7 @@ function! QuickfixSearch(normal_mode)
         let word = getreg("z")
     endif
 
-    " Set search term (use the search pattern register directly, `set hls` must be executed after 
-    " function exits)
+    " Set search term (use the search pattern register directly, `set hls` must be executed after function exits)
     let @/ = word
     exe "norm /\<cr>``"
     
@@ -79,6 +78,21 @@ endfunction!
 command! E :call ReloadAll()
 
 
+" :C -> copy this file's absolute path to the clipboard
+function! CopyFileNameToClipboard()
+    if !executable('xclip')
+        echo "xclip not installed!"
+        return
+    endif
+
+    let file = simplify(expand("%:p"))
+    call system("echo " . file . " | xclip -selection clipboard")
+
+    echo 'Copied "' . file . '" to clipboard'
+endfunction!
+command! C :call CopyFileNameToClipboard()
+
+
 " F3 -> remove this swap file
 function! RemoveSwap()
     call system("rm " . expand("%:h") . "/." . expand("%:t") . ".sw?")
@@ -96,7 +110,7 @@ function! TagGen()
     silent! !rm tags
 
     if !executable('ctags')
-        echo "Ctags not installed!"
+        echo "ctags not installed!"
         return
     endif
 
@@ -217,24 +231,32 @@ function! SwapToRespectiveFile()
         endif
     else
         " Not a .c, .cpp, .h, .hpp, or file ending in '.', so do nothing
+        echo "Nothing to do"
         return
     endif
 
     " First check if the file exists already at the current dir or up/down one dir
-    " If it doesn't exist anywhere, open it at the current buffer
     let file_path_to_open = system("find " . file_dir . "/.. -name " . file_name_to_open . " | head -n 1")
+
+    " v:shell_error isn't populating, just search for the error string
+    if (stridx(file_path_to_open, "No such file or directory") != -1)
+        echo file_dir . " not found"
+        return
+    endif
 
     " Remove any "../" in the file path
     let file_path_to_open = simplify(file_path_to_open)
 
-    " v:shell_error isn't populating, just search for the error string
-    if (stridx(file_path_to_open, "No such file or directory") == -1)
+    " If the file doesn't exist anywhere, open it at the current buffer
+    if (file_path_to_open != "")
         exe "e " . file_path_to_open
     else 
+        echo "Did not exist, creating!"
         exe "e " . expand('%:h') . '/' . file_name_to_open
     endif
 endfunction!
 nnoremap  :call SwapToRespectiveFile()<cr>
+inoremap  :call SwapToRespectiveFile()<cr>
 vnoremap  :call SwapToRespectiveFile()<cr>
 
 " Auto-increments a selection of numbers in visual selection, e.g.:
